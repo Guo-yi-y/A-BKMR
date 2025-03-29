@@ -3,9 +3,9 @@
 .onLoad <- function(libname, pkgname) {
   # 1. 确保加载 reticulate 包
   if (!requireNamespace("reticulate", quietly = TRUE)) {
-    stop("Please install the reticulate package first.")
+    stop("Please install the 'reticulate' package first.")
   }
-  library(reticulate)
+
   # 2. 检查 Python 是否已安装
   python_installed <- tryCatch({
     reticulate::py_config()
@@ -15,26 +15,23 @@
   })
 
   if (!python_installed) {
-    message("Python is not installed or not detected.")
-
-    # 尝试通过 Miniconda 安装 Python
-    message("Attempting to install Python using reticulate::install_python()...")
+    packageStartupMessage("Python is not installed or not detected.")
+    packageStartupMessage("Attempting to install Python using reticulate::install_python()...")
     tryCatch({
       reticulate::install_python()
-      message("Python has been successfully installed.")
+      packageStartupMessage("Python has been successfully installed.")
     }, error = function(e) {
-      message("Failed to install Python. Please install Python manually.")
-      message("You can install Python via: https://www.python.org/downloads/")
+      packageStartupMessage("Failed to install Python. Please install Python manually.")
+      packageStartupMessage("You can install Python via: https://www.python.org/downloads/")
     })
   } else {
-    message("Python is installed. Proceeding with the package load...")
+    packageStartupMessage("Python is installed. Proceeding with the package load...")
   }
 
   # 3. 检查并安装所需的 Python 包
   required_packages <- c("numpy", "mpmath", "pandas", "scipy")
 
   for (pkg in required_packages) {
-    # 检查 Python 包是否已安装
     installed <- tryCatch({
       reticulate::py_run_string(paste("import", pkg))
       TRUE
@@ -43,17 +40,15 @@
     })
 
     if (!installed) {
-      message(paste(pkg, "not found. Installing...", sep = " "))
-
-      # 安装缺失的 Python 包
+      packageStartupMessage(paste(pkg, "not found. Installing..."))
       tryCatch({
         reticulate::py_install(pkg)
-        message(paste(pkg, "has been successfully installed.", sep = " "))
+        packageStartupMessage(paste(pkg, "has been successfully installed."))
       }, error = function(e) {
-        message(paste("Failed to install", pkg, ". Please install it manually.", sep = " "))
+        packageStartupMessage(paste("Failed to install", pkg, ". Please install it manually."))
       })
     } else {
-      message(paste(pkg, "is already installed.", sep = " "))
+      packageStartupMessage(paste(pkg, "is already installed."))
     }
   }
 
@@ -63,6 +58,10 @@
     stop("Python file 'py_functions.py' not found.")
   }
 
-  # 加载 Python 文件
   reticulate::source_python(python_file)
 }
+
+utils::globalVariables(c(
+  "ComputePostmeanHnew.exact", "K", "Vinv", "est",
+  "variable", "variable1", "variable2", "z1", "."
+))

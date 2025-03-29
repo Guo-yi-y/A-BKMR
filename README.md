@@ -1,28 +1,19 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
 
 # A-BKMR
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-A-BKMR is used to perform advanced BKMR in extremely fast speed. Additionally, you can use A-BKMR to estimate various effect that other machine learning method can not output
+A-BKMR is used to perform advanced BKMR in extremely fast speed.
+Additionally, you can use A-BKMR to estimate various effect that other
+machine learning method can not output
 
 ## Installation
 
-You can install the development version of pairWQS from [GitHub](https://github.com/) with:
+You can install the development version of pairWQS from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -148,9 +139,6 @@ ggplot(multi_2inter, aes(variable, est, ymin = est - 1.96*sd,
 
 
 
-
 ```
-
-
 
 Reference

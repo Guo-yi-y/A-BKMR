@@ -1,8 +1,8 @@
 #' There are some internal functions
 #'
-#' @param y outcome
-#' @param x covariates
-#' @param Z exposures
+#'
+#' @importFrom stats rnorm runif quantile lm glm binomial coef dgamma dunif rgamma rmultinom pchisq sd
+#' @importFrom utils modifyList
 #' @return objects for consquent computation
 #' @keywords internal
 # model fit ---------------------------------------------------------------
@@ -19,6 +19,9 @@ makeKpart <- function(r, Z1, Z2 = NULL) {
   Kpart
 }
 a_makeVcomps <- function(X =X, r, lambda, Z, data.comps) {
+
+  py <- get_py()
+
   if (is.null(data.comps$knots)) {
     Kpart <- makeKpart(r, Z)
     V <- diag(1, nrow(Z), nrow(Z)) + lambda[1]*exp(-Kpart)
@@ -35,6 +38,7 @@ a_makeVcomps <- function(X =X, r, lambda, Z, data.comps) {
     n0 <- nrow(Z)
     n1 <- nrow(data.comps$knots)
     nall <- n0 + n1
+
 
     K1 <- py$exp_neg_mat(makeKpart(r, data.comps$knots))
     K10 <- py$exp_neg_mat(makeKpart(r, data.comps$knots, Z))
@@ -56,6 +60,7 @@ a_makeVcomps <- function(X =X, r, lambda, Z, data.comps) {
 
 
 makeVcomps <- function(r, lambda, Z, data.comps) {
+  py <- get_py()
   if (is.null(data.comps$knots)) {
     Kpart <- makeKpart(r, Z)
     V <- diag(1, nrow(Z), nrow(Z)) + lambda[1]*exp(-Kpart)
@@ -103,6 +108,7 @@ a_beta.update <- function(X, XVinv, y, sigsq.eps) {
 }
 
 a_sigsq.eps.update <- function(y, X, beta, Vcomps, a.eps=1e-3, b.eps=1e-3) {
+  py <- get_py()
   mu <- y - X%*%beta
 
   muVinv = py$compute_muVinv(mu, Vcomps$lambda, Vcomps$K10, Vcomps$Rinv)
@@ -134,9 +140,126 @@ ystar.update.noh <- function(y, X, beta, Vinv, ystar) {
   drop(samp)
 }
 
+validateControlParams = function (varsel, family, id, control.params) {
+  message("Validating control.params...")
+  if (family == "gaussian") {
+    stopifnot(control.params$a.sigsq > 0, control.params$b.sigsq >
+                0)
+  }
+  if (varsel == TRUE) {
+    stopifnot(control.params$a.p0 > 0, control.params$b.p0 >
+                0, control.params$r.jump1 > 0, control.params$r.jump2 >
+                0, control.params$r.muprop > 0)
+  }
+  else {
+    stopifnot(control.params$r.jump > 0)
+  }
+  if (!is.null(id)) {
+    stopifnot(length(control.params$mu.lambda) == 2, length(control.params$sigma.lambda) ==
+                2, length(control.params$lambda.jump) == 2)
+  }
+  for (i in 1:length(control.params$mu.lambda)) {
+    stopifnot(control.params$mu.lambda > 0)
+  }
+  for (i in 1:length(control.params$sigma.lambda)) {
+    stopifnot(control.params$sigma.lambda > 0)
+  }
+  for (i in 1:length(control.params$lambda.jump)) {
+    stopifnot(control.params$lambda.jump > 0)
+  }
+  rprior = control.params$r.prior
+  stopifnot(rprior == "gamma" | rprior == "unif" | rprior ==
+              "invunif")
+  if (control.params$r.prior == "gamma") {
+    stopifnot(control.params$mu.r > 0, control.params$sigma.r >
+                0)
+  }
+  else {
+    stopifnot(control.params$r.a >= 0, control.params$r.b >
+                control.params$r.a)
+  }
+}
+
+validateStartingValues = function (varsel, y, X, Z, starting.values, rmethod) {
+  Ylength <- length(y)
+  Xwidth <- ncol(X)
+  Zwidth <- ncol(Z)
+  message("Validating starting.values...")
+  stopifnot(starting.values$sigsq.eps > 0, all(starting.values$lambda >
+                                                 0))
+  if (length(starting.values$beta) != Xwidth) {
+    message("beta should be a vector of length equal to the number of columns of X.  Input will be repeated or truncated as necessary.")
+  }
+  if (length(starting.values$h.hat) != Ylength) {
+    message("h.hat should be a vector of length equal to number of rows in Y.  Input will be repeated or truncated as necessary.")
+  }
+  if (length(starting.values$delta) != Zwidth) {
+    message("delta should be a vector of length equal to the number of columns of Z.  Input will be repeated or truncated as necessary.")
+  }
+  stopifnot(all(starting.values$delta %in% c(1, 0)))
+  if (varsel == TRUE) {
+    if (length(starting.values$r) != Zwidth) {
+      message("r should be a vector of length equal to the number of columns of Z.  Input will be repeated or truncated as necessary.")
+    }
+    stopifnot(starting.values$r >= 0)
+  }
+  else {
+    if (rmethod == "equal" & length(starting.values$r) >
+        1) {
+      message("r should a scalar.  Vector input will be truncated.")
+      starting.values$r = starting.values$r[1]
+    }
+    else if (length(starting.values$r) != Zwidth) {
+      message("r should be a vector of length equal to the number of columns of Z.  Input will be repeated or truncated as necessary.")
+    }
+    stopifnot(all(starting.values$r > 0))
+  }
+}
+
+make_r_params_comp = function (r.params, whichcomp) {
+  for (i in seq_along(r.params)) {
+    if (length(r.params[[i]]) > 1) {
+      r.params[[i]] <- r.params[[i]][whichcomp]
+    }
+  }
+  r.params
+}
+
+set.r.params = function (r.prior, comp, r.params) {
+  if (r.prior == "gamma") {
+    if (length(r.params$mu.r) > 1)
+      r.params$mu.r <- r.params$mu.r[comp]
+    if (length(r.params$sigma.r) > 1)
+      r.params$sigma.r <- r.params$sigma.r[comp]
+    if (length(r.params$r.jump1) > 1)
+      r.params$r.jump1 <- r.params$r.jump1[comp]
+    if (length(r.params$r.jump2) > 1)
+      r.params$r.jump2 <- r.params$r.jump2[comp]
+  }
+  if (r.prior %in% c("unif", "invunif")) {
+    if (length(r.params$r.a) > 1)
+      r.params$r.a <- r.params$r.a[comp]
+    if (length(r.params$r.b) > 1)
+      r.params$r.b <- r.params$r.b[comp]
+    if (length(r.params$r.jump2) > 1)
+      r.params$r.jump2 <- r.params$r.jump2[comp]
+  }
+  r.params
+}
+
+interactionSummary.approx = function (newz.q1, newz.q2, preds.fun, ...) {
+  cc <- c(-1 * c(-1, 1), c(-1, 1))
+  newz <- rbind(newz.q1, newz.q2)
+  preds <- preds.fun(newz, ...)
+  int <- drop(cc %*% preds$postmean)
+  int.se <- drop(sqrt(cc %*% preds$postvar %*% cc))
+  c(est = int, sd = int.se)
+}
+
+
 a_r.update <- function(r, whichcomp, delta, lambda, y, X, beta, sigsq.eps, Vcomps, Z, data.comps, control.params, rprop.gen, rprop.logdens, rprior.logdens, ...) {
   # r.params <- set.r.params(r.prior = control.params$r.prior, comp = whichcomp, r.params = control.params$r.params)
-  r.params <- bkmr:::make_r_params_comp(control.params$r.params, whichcomp)
+  r.params <- make_r_params_comp(control.params$r.params, whichcomp)
   rcomp <- unique(r[whichcomp])
   if(length(rcomp) > 1) stop("rcomp should only be 1-dimensional")
 
@@ -159,6 +282,9 @@ a_r.update <- function(r, whichcomp, delta, lambda, y, X, beta, sigsq.eps, Vcomp
   return(a_MHstep(r=r, lambda=lambda, lambda.star=lambda.star, r.star=r.star, delta=delta, delta.star=delta.star, y=y, X=X, Z=Z, beta=beta, sigsq.eps=sigsq.eps, diffpriors=diffpriors, negdifflogproposal=negdifflogproposal, Vcomps=Vcomps, move.type=move.type, data.comps=data.comps))
 }
 
+
+
+
 a_rdelta.comp.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomps, Z, ztest, data.comps, control.params, rprop.gen2, rprop.logdens1, rprior.logdens, rprior.logdens2, rprop.logdens2, rprop.gen1,...) { ## individual variable selection
   r.params <- control.params$r.params
   a.p0 <- control.params$a.p0
@@ -170,7 +296,7 @@ a_rdelta.comp.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomps
   move.prob <- ifelse(all(delta[ztest] == 0), 1, 1/2)
   if(move.type == 1) {
     comp <- ifelse(length(ztest) == 1, ztest, sample(ztest, 1))
-    r.params <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
+    r.params <- set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
 
     delta.star[comp] <- 1 - delta[comp]
     move.prob.star <- ifelse(all(delta.star[ztest] == 0), 1, 1/2)
@@ -182,7 +308,7 @@ a_rdelta.comp.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomps
 
   } else if(move.type == 2) {
     comp <- ifelse(length(which(delta == 1)) == 1, which(delta == 1), sample(which(delta == 1), 1))
-    r.params <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
+    r.params <- set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
 
     r.star[comp] <- rprop.gen2(current = r[comp], r.params = r.params)
 
@@ -241,7 +367,7 @@ a_rdelta.group.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomp
 
     ## which component got switched
     comp <- ifelse(delta.source[source] == 1, source.comps[which(delta[source.comps] == 1)], source.comps[which(delta.star[source.comps] == 1)])
-    r.params <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
+    r.params <- set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
 
     r.star[comp] <- ifelse(delta.star[comp] == 0, 0, rprop.gen1(r.params = r.params))
 
@@ -261,8 +387,8 @@ a_rdelta.group.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomp
     tmp <- source.comps[delta[source.comps] == 0]
     comp <- ifelse(length(tmp) == 1, tmp, sample(tmp, 1))
 
-    r.params.oldcomp <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = oldcomp, r.params = r.params)
-    r.params <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
+    r.params.oldcomp <- set.r.params(r.prior = control.params$r.prior, comp = oldcomp, r.params = r.params)
+    r.params <- set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
 
     delta.star[oldcomp] <- 0
     delta.star[comp] <- 1
@@ -278,7 +404,7 @@ a_rdelta.group.update <- function(r, delta, lambda, y, X, beta, sigsq.eps, Vcomp
     tmp <- which(delta == 1)
     comp <- ifelse(length(tmp) == 1, tmp, sample(tmp, 1))
 
-    r.params <- bkmr:::set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
+    r.params <- set.r.params(r.prior = control.params$r.prior, comp = comp, r.params = r.params)
 
     r.star[comp] <- rprop.gen2(current = r[comp], r.params = r.params)
 
@@ -320,6 +446,7 @@ a_lambda.update <- function(r, delta, lambda, whichcomp=1, y, X, Z = Z, beta, si
 }
 
 a_MHstep <- function( r, lambda, lambda.star, r.star, delta, delta.star, y, X, Z, beta, sigsq.eps, diffpriors, negdifflogproposal, Vcomps, move.type, data.comps, ...) {
+  py <- get_py()
   ## compute log M-H ratio
   Vcomps.star <- a_makeVcomps(X, r.star, lambda.star, Z, data.comps)
   mu <- y - X%*%beta
@@ -342,6 +469,7 @@ a_MHstep <- function( r, lambda, lambda.star, r.star, delta, delta.star, y, X, Z
 }
 
 h.update <- function(lambda, Vcomps, sigsq.eps, y, X, beta, r, Z, data.comps) {
+  py <- get_py()
   if (is.null(Vcomps)) {
     Vcomps <- makeVcomps(r = r, lambda = lambda, Z = Z, data.comps = data.comps)
   }
@@ -372,7 +500,7 @@ h.update <- function(lambda, Vcomps, sigsq.eps, y, X, beta, r, Z, data.comps) {
 }
 
 newh.update <- function(Z, Znew, Vcomps, lambda, sigsq.eps, r, y, X, beta, data.comps) {
-
+  py <- get_py()
   if(is.null(data.comps$knots)) {
     n0 <- nrow(Z)
     n1 <- nrow(Znew)
@@ -758,7 +886,7 @@ a_SingVarIntSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, d
   if (method %in% c("approx", "exact")) {
     preds.fun <- function(znew) a_ComputePostmeanHnew(fit = fit,
                                                        y = y, Z = Z, X = X, data.comps = data.comps, Znew = znew, sel = sel, method = method)
-    interactionSummary <- bkmr:::interactionSummary.approx
+    interactionSummary <- interactionSummary.approx
   }
   else {
     stop("method must be one of c('approx', 'exact')")
@@ -914,3 +1042,13 @@ a_PredictorResponseBivarPair = function (fit, y = NULL, Z = NULL, X = NULL, data
                        se = se.plot)
 }
 
+
+
+
+
+# get_py ------------------------------------------------------------------
+
+
+get_py <- function() {
+  reticulate::import_main(convert = TRUE)
+}

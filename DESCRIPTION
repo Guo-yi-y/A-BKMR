@@ -13,7 +13,11 @@ RoxygenNote: 7.3.2
 Imports: 
     bkmr,
     dplyr,
+    fields,
+    glue,
+    magrittr,
     reticulate,
+    statmod,
     tmvtnorm,
     truncnorm
 Suggests: 
