@@ -319,7 +319,7 @@ a_lambda.update <- function(r, delta, lambda, whichcomp=1, y, X, Z = Z, beta, si
   return(a_MHstep( r=r, lambda=lambda, lambda.star=lambda.star, r.star=r.star, delta=delta, delta.star=delta.star, y=y, X=X, Z=Z, beta=beta, sigsq.eps=sigsq.eps, diffpriors=diffpriors, negdifflogproposal=negdifflogproposal, Vcomps=Vcomps, move.type=move.type, data.comps=data.comps))
 }
 
-a_MHstep <- function( r, lambda, lambda.star, r.star, delta, delta.star, y, X, Z, beta, sigsq.eps, diffpriors, negdifflogproposal, Vcomps, move.type, data.comps) {
+a_MHstep <- function( r, lambda, lambda.star, r.star, delta, delta.star, y, X, Z, beta, sigsq.eps, diffpriors, negdifflogproposal, Vcomps, move.type, data.comps, ...) {
   ## compute log M-H ratio
   Vcomps.star <- a_makeVcomps(X, r.star, lambda.star, Z, data.comps)
   mu <- y - X%*%beta
@@ -847,7 +847,7 @@ a_VarRiskSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, data
 
 
 
-a_PredictorResponseBivarPair_gy = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, whichz1 = 1, whichz2 = 2,
+a_PredictorResponseBivarPair = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, whichz1 = 1, whichz2 = 2,
                                           whichz3 = NULL, method = "approx", prob = 0.5, q.fixed = 0.5,
                                           sel = NULL, ngrid = 50, min.plot.dist = 0.5, center = TRUE,
                                           ...) {
