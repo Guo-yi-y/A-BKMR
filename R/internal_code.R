@@ -647,10 +647,10 @@ set.r.MH.functions = function (r.prior) {
 # output ------------------------------------------------------------------
 
 a_ComputePostmeanHnew = function (fit, y = NULL, Z = NULL, X = NULL, Znew = NULL, sel = NULL,
-                                  method = "approx", data.comps) {
+                                   method = "approx", data.comps) {
   if (method == "approx") {
     res <- a_ComputePostmeanHnew.approx(fit = fit, y = y, Z = Z,
-                                        X = X, Znew = Znew, sel = sel, data.comps = data.comps)
+                                         X = X, Znew = Znew, sel = sel, data.comps = data.comps)
   }
   else if (method == "exact") {
     res <- ComputePostmeanHnew.exact(fit = fit, y = y, Z = Z,
@@ -693,17 +693,34 @@ a_ComputePostmeanHnew.approx = function (fit, y = NULL, Z = NULL, X = NULL, Znew
   Vcomps_sum = a_makeVcomps(X = X, r = r, lambda = lambda, Z = Z, data.comps = data.comps)
 
 
+  # Kpart <- makeKpart(r, Z)
+  # K <- exp(-Kpart)
+  # V <- diag(1, nrow(Z), nrow(Z)) + lambda[1] * K
+  # cholV <- chol(V)
+  # Vinv <- chol2inv(cholV)
   if (!is.null(Znew)) {
     n0 <- nrow(Z)
     n1 <- nrow(Znew)
     nall <- n0 + n1
-
+    # Kpartall <- makeKpart(r, rbind(Z, Znew))
+    # Kmat <- exp(-Kpartall)
+    # Kmat0 <- Kmat[1:n0, 1:n0, drop = FALSE]
+    # Kmat1 <- Kmat[(n0 + 1):nall, (n0 + 1):nall, drop = FALSE]
+    # Kmat10 <- Kmat[(n0 + 1):nall, 1:n0, drop = FALSE]
+    #Kmat1 = exp_neg_mat(makeKpart(r, Znew))
+    #Kmat10 = exp_neg_mat(makeKpart(r, Znew, Z))
 
     Kmat1 <- exp(-makeKpart(r, Znew))
     Kmat10 <- exp(-makeKpart(r, Znew, data.comps$knots))
+    #lamK10Vinv <- lambda[1]*Kmat10 %*% Vinv
+    #Vinv1 = diag(1, n0, n0) - lambda[1]*t(Vcomps_sum$K10) %*% Vcomps_sum$Rinv %*% Vcomps_sum$K10
+    #lamK10Vinv <- lambda[1] * as.bigq(Kmat10) - lambda[1]*lambda[1] * as.bigq(Kmat10) %*% as.bigq(t(Vcomps_sum$K10)) %*% as.bigq(Vcomps_sum$Rinv) %*% as.bigq(Vcomps_sum$K10)
+    #lamK10Vinv <- lambda[1] * Kmat10 - lambda[1]*lambda[1] * Kmat10 %*% t(Vcomps_sum$K10) %*% Vcomps_sum$Rinv %*% Vcomps_sum$K10
 
+    #lamK10Vinv = comp_lamK10Vinv(exp_neg_mat(makeKpart(r, Znew, Z)), lambda[1], Vcomps_sum$K10, Vcomps_sum$Rinv)
+    #postvar <- lambda[1] * sigsq.eps * (Kmat1 - lamK10Vinv %*% t(Kmat10))
     postvar <- lambda[1] * sigsq.eps * Kmat10 %*% Vcomps_sum$Rinv %*% t(Kmat10)
-
+    #postmean <- lamK10Vinv %*% (ycont - X %*% beta)
     postmean = lambda[1]*Kmat10 %*% Vcomps_sum$Rinv %*% Vcomps_sum$K10 %*% (ycont - X%*%beta)
   }
   else {
@@ -719,7 +736,7 @@ a_ComputePostmeanHnew.approx = function (fit, y = NULL, Z = NULL, X = NULL, Znew
 
 
 a_SingVarIntSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, data.comps, qs.diff = c(0.25, 0.75), qs.fixed = c(0.25, 0.75), method = "approx", sel = NULL,
-                                ...) {
+                                 ...) {
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -740,7 +757,7 @@ a_SingVarIntSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, d
   newz.q2 <- rbind(point1, point2)
   if (method %in% c("approx", "exact")) {
     preds.fun <- function(znew) a_ComputePostmeanHnew(fit = fit,
-                                                      y = y, Z = Z, X = X, data.comps = data.comps, Znew = znew, sel = sel, method = method)
+                                                       y = y, Z = Z, X = X, data.comps = data.comps, Znew = znew, sel = sel, method = method)
     interactionSummary <- bkmr:::interactionSummary.approx
   }
   else {
@@ -755,8 +772,8 @@ a_SingVarIntSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, d
 
 
 a_PredictorResponseUnivarVar = function (whichz = 1, fit, y, Z, X, data.comps = data.comps, method = "approx", ngrid = 50,
-                                         q.fixed = 0.5, sel = NULL, min.plot.dist = Inf, center = TRUE,
-                                         z.names = colnames(Z), ...) {
+                                          q.fixed = 0.5, sel = NULL, min.plot.dist = Inf, center = TRUE,
+                                          z.names = colnames(Z), ...) {
   if (ncol(Z) < 2)
     stop("requires there to be at least 2 predictor variables")
   if (is.null(z.names)) {
@@ -784,7 +801,7 @@ a_PredictorResponseUnivarVar = function (whichz = 1, fit, y, Z, X, data.comps = 
   }
   if (method %in% c("approx", "exact")) {
     preds <- a_ComputePostmeanHnew(fit = fit, y = y, Z = Z, data.comps = data.comps,
-                                   X = X, Znew = newz.grid, sel = sel, method = method)
+                                    X = X, Znew = newz.grid, sel = sel, method = method)
     preds.plot <- preds$postmean
     se.plot <- sqrt(diag(preds$postvar))
   }
@@ -801,7 +818,7 @@ a_PredictorResponseUnivarVar = function (whichz = 1, fit, y, Z, X, data.comps = 
 }
 
 a_VarRiskSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, data.comps, qs.diff = c(0.25,
-                                                                                                    0.75), q.fixed = 0.5, method = "approx", sel = NULL, ...) {
+                                                                                                     0.75), q.fixed = 0.5, method = "approx", sel = NULL, ...) {
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -819,19 +836,21 @@ a_VarRiskSummary = function (whichz = 1, fit, y = NULL, Z = NULL, X = NULL, data
   cc <- c(-1, 1)
   newz <- rbind(point1, point2)
   preds <- a_ComputePostmeanHnew(fit = fit,
-                                 y = y, Z = Z, X = X, data.comps = data.comps, Znew = newz, sel = sel, method = method)
+                                  y = y, Z = Z, X = X, data.comps = data.comps, Znew = newz, sel = sel, method = method)
   diff <- drop(cc %*% preds$postmean)
   diff.sd <- drop(sqrt(cc %*% preds$postvar %*% cc))
-  return(c(est = diff, sd = diff.sd))
+  return(c(est = diff, sd = diff.sd, est_e = preds$postmean[2], sd_e = preds$postvar[4]^0.5))
 
 
 
 }
 
-a_PredictorResponseBivarPair = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, whichz1 = 1, whichz2 = 2,
-                                         whichz3 = NULL, method = "approx", prob = 0.5, q.fixed = 0.5,
-                                         sel = NULL, ngrid = 50, min.plot.dist = 0.5, center = TRUE,
-                                         ...) {
+
+
+a_PredictorResponseBivarPair_gy = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, whichz1 = 1, whichz2 = 2,
+                                          whichz3 = NULL, method = "approx", prob = 0.5, q.fixed = 0.5,
+                                          sel = NULL, ngrid = 50, min.plot.dist = 0.5, center = TRUE,
+                                          ...) {
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -878,7 +897,7 @@ a_PredictorResponseBivarPair = function (fit, y = NULL, Z = NULL, X = NULL, data
   }
   if (method %in% c("approx", "exact")) {
     preds <- a_ComputePostmeanHnew(fit = fit, y = y, Z = Z, data.comps = data.comps,
-                                   X = X, Znew = newz.grid, sel = sel, method = method)
+                                    X = X, Znew = newz.grid, sel = sel, method = method)
     preds.plot <- preds$postmean
     se.plot <- sqrt(diag(preds$postvar))
   }
@@ -894,3 +913,4 @@ a_PredictorResponseBivarPair = function (fit, y = NULL, Z = NULL, X = NULL, data
   res <- dplyr::tibble(z1 = z1save, z2 = z2save, est = preds.plot,
                        se = se.plot)
 }
+
