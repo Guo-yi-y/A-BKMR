@@ -13,42 +13,57 @@ knitr::opts_chunk$set(
 )
 ```
 
-# aBKMR
+# A-BKMR
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of aBKMR is to ...
+A-BKMR is used to perform advanced BKMR in extremely fast speed. Additionally, you can use A-BKMR to estimate various effect that other machine learning method can not output
 
 ## Installation
 
-You can install the development version of aBKMR like so:
+You can install the development version of pairWQS from [GitHub](https://github.com/) with:
 
 ``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+# install.packages("devtools")
+devtools::install_github("Guo-yi-y/A-BKMR")
 ```
 
 ## Example
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example}
-library(aBKMR)
-## basic example code
+``` r
+library(pairWQS)
+result <- pairwqs(
+  train_data = train_data,
+  valid_data = valid_data,
+  col_vars = col_vars,
+  col_covars = NULL,
+  id = "studyid", 
+  event = "event", 
+  q=4, 
+  boot = FALSE
+)
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+In environmental study, researchers usually to adjust the spline terms of temperature and humidity. For example, you may want to adjust ns(temp, 3) and ns(hum, 3), then you can perform:
 
-```{r cars}
-summary(cars)
+``` r
+train_data = cbind(train_data, ns(train_data$temp, 3), ns(train_data$hum, 3))
+
+names(train_data)[ (ncol(train_data)-5):ncol(train_data)] = c("ns_temp1", "ns_temp2", "ns_temp3", "ns_h1", "ns_h2", "ns_h3")
+result <- pairwqs(
+  train_data = train_data,
+  valid_data = valid_data,
+  col_vars = col_vars,
+  col_covars = c("ns_temp1", "ns_temp2", "ns_temp3", "ns_h1", "ns_h2", "ns_h3"),
+  id = "studyid", 
+  event = "event", 
+  q=4, 
+  boot = FALSE
+)
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
 
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+Reference
