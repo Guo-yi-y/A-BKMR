@@ -744,7 +744,7 @@ com_ue = function(ue_obj, s){
       set.seed(j)
 
       for (m in 1:nrow(temp_data)) {
-        temp_data$temp_y[m] = rnorm(1, mean = temp_data$est[m], sd = temp_data$se[m])
+        temp_data$temp_y[m] = rnorm(1, mean = temp_data$est_e[m], sd = temp_data$se_e[m])
       }
 
       temp_coe = glm(temp_y~z, temp_data, family = "gaussian")[["coefficients"]][2]
