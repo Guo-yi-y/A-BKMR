@@ -740,16 +740,14 @@ com_ue = function(ue_obj, s){
   est_df = lapply(as.character(unique(ue_obj$variable)), function(i){
     temp_data = ue_obj %>% filter(variable == i)
     temp_data$temp_y=NA
-    gf_res = unlist(lapply(1:s, function(j){
-      set.seed(j)
-
+    gf_res = unlist(lapply(1:s, function(s) {
+      set.seed(s)
       for (m in 1:nrow(temp_data)) {
-        temp_data$temp_y[m] = rnorm(1, mean = temp_data$est_e[m], sd = temp_data$se_e[m])
+        temp_data$temp_y[m] = rnorm(1, mean = temp_data$est_e[m],
+                                    sd = temp_data$sd_e[m])
       }
-
-      temp_coe = glm(temp_y~z, temp_data, family = "gaussian")[["coefficients"]][2]
+      temp_coe = glm(temp_y ~ q.fixed, temp_data, family = "gaussian")[["coefficients"]][2]
       return(temp_coe)
-
     }))
 
     temp_res = data.frame(beta = mean(gf_res), lower = mean(gf_res)-1.96*sd(gf_res), upper = mean(gf_res)+1.96*sd(gf_res)) %>%
