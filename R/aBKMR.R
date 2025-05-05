@@ -716,7 +716,7 @@ a_PredictorResponseBivar = function (fit, y = NULL, Z = NULL, X = NULL, data.com
 com_je = function(je_df, s){
   temp_df = je_df
   gf_list = unlist(lapply(1:s, function(j){
-    set.seed(j)
+    #set.seed(j)
     for (i in 1:nrow(je_df)) {
       temp_df$temp_y[i] = rnorm(1, mean = je_df$est_e[i], sd = je_df$sd_e[i])
     }
@@ -741,7 +741,7 @@ com_ue = function(ue_obj, s){
     temp_data = ue_obj %>% filter(variable == i)
     temp_data$temp_y=NA
     gf_res = unlist(lapply(1:s, function(s) {
-      set.seed(s)
+      #set.seed(s)
       for (m in 1:nrow(temp_data)) {
         temp_data$temp_y[m] = rnorm(1, mean = temp_data$est_e[m],
                                     sd = temp_data$sd_e[m])
