@@ -4,12 +4,14 @@
 \alias{com_je}
 \title{used for joint effect estimation}
 \usage{
-com_je(je_df, s)
+com_je(postmean, postvar, X, B = 1000)
 }
 \arguments{
-\item{je_df}{data frame of overall effect obtained by a_OverallRiskSummaries}
+\item{postmean}{prrdicted values of y}
 
-\item{s}{the number of g-formula resampling}
+\item{postvar}{variance-covariance matrix of predicted y}
+
+\item{B}{the number of bootstrap. By default, it is 1000}
 }
 \description{
 used for joint effect estimation

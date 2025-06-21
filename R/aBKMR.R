@@ -10,9 +10,112 @@
 #' @import statmod
 #' @import glue
 #' @import reticulate
+#' @importFrom MASS mvrnorm
+
+
+
+#' @title Simulate data
+
+#' @description used for generating simulated data
+#'
+#' @param n number of observations
+#' @param M number of exposures
+#' @param sigsq.true Variance of normally distributed residual error
+#' @param hfun An integer from 1 to 3 identifying which predictor-response function to generate
+#' @param beta.true coefficient of covariates
+#' @param Zgen Method for generating the matrix Z of exposure variables, taking one of the values c("unif", "norm", "corr", "realistic")
+#' @param ind select which predictor(s) will be included in the h function; how many predictors that can be included will depend on which h function is being used
+#' @param family 	a description of the error distribution and link function to be used in the model. Currently implemented for gaussian and binomial families
+#' @export
+sim_data = function (n = 100, M = 5, sigsq.true = 0.5, hfun = 3, beta.true = 2,
+                     Zgen = "norm", ind = 1:2, family = "gaussian")
+{
+  stopifnot(n > 0, M > 0, sigsq.true >= 0, family %in% c("gaussian",
+                                                         "binomial"))
+  if (family == "binomial") {
+    sigsq.true <- 1
+  }
+  if (hfun == 1) {
+    HFun <- HFun1
+  }
+  else if (hfun == 2) {
+    HFun <- HFun2
+  }
+  else if (hfun == 3) {
+    HFun <- bkmr:::HFun3
+  }
+  else {
+    stop("hfun must be an integer from 1 to 3")
+  }
+  if (Zgen == "unif") {
+    Z <- matrix(runif(n * M, -2, 2), n, M)
+  }
+  else if (Zgen == "norm") {
+    Z <- matrix(rnorm(n * M), n, M)
+  }
+  else if (Zgen == "corr") {
+    if (M < 3) {
+      stop("M must be an integer > 2 for Zgen = 'corr'")
+    }
+    Sigma <- diag(1, M, M)
+    Sigma[1, 3] <- Sigma[3, 1] <- 0.95
+    Sigma[2, 3] <- Sigma[3, 2] <- 0.3
+    Sigma[1, 2] <- Sigma[2, 1] <- 0.1
+    Z <- mvrnorm(n = n, mu = rep(0, M), Sigma = Sigma)
+  }
+  else if (Zgen == "realistic") {
+    VarRealistic <- structure(c(0.72, 0.65, 0.45, 0.48, 0.08,
+                                0.14, 0.16, 0.42, 0.2, 0.11, 0.35, 0.1, 0.11, 0.65,
+                                0.78, 0.48, 0.55, 0.06, 0.09, 0.17, 0.2, 0.16, 0.11,
+                                0.32, 0.12, 0.12, 0.45, 0.48, 0.56, 0.43, 0.11, 0.15,
+                                0.23, 0.25, 0.28, 0.16, 0.31, 0.15, 0.14, 0.48, 0.55,
+                                0.43, 0.71, 0.2, 0.23, 0.32, 0.22, 0.29, 0.14, 0.3,
+                                0.22, 0.18, 0.08, 0.06, 0.11, 0.2, 0.95, 0.7, 0.45,
+                                0.22, 0.29, 0.16, 0.24, 0.2, 0.13, 0.14, 0.09, 0.15,
+                                0.23, 0.7, 0.8, 0.36, 0.3, 0.35, 0.13, 0.23, 0.17,
+                                0.1, 0.16, 0.17, 0.23, 0.32, 0.45, 0.36, 0.83, 0.24,
+                                0.37, 0.2, 0.36, 0.34, 0.25, 0.42, 0.2, 0.25, 0.22,
+                                0.22, 0.3, 0.24, 1.03, 0.41, 0.13, 0.39, 0.1, 0.1,
+                                0.2, 0.16, 0.28, 0.29, 0.29, 0.35, 0.37, 0.41, 0.65,
+                                0.18, 0.3, 0.18, 0.16, 0.11, 0.11, 0.16, 0.14, 0.16,
+                                0.13, 0.2, 0.13, 0.18, 0.6, 0.18, 0.13, 0.08, 0.35,
+                                0.32, 0.31, 0.3, 0.24, 0.23, 0.36, 0.39, 0.3, 0.18,
+                                0.79, 0.42, 0.12, 0.1, 0.12, 0.15, 0.22, 0.2, 0.17,
+                                0.34, 0.1, 0.18, 0.13, 0.42, 1.27, 0.1, 0.11, 0.12,
+                                0.14, 0.18, 0.13, 0.1, 0.25, 0.1, 0.16, 0.08, 0.12,
+                                0.1, 0.67), .Dim = c(13L, 13L))
+    if (M > ncol(VarRealistic)) {
+      stop("Currently can only generate exposure data based on a realistic correlation structure with M = 13 or fewer. Please set M = 13 or use Zgen = c('unif','norm'")
+    }
+    else if (M <= 13) {
+      Sigma <- VarRealistic[1:M, 1:M]
+    }
+    Z <- mvrnorm(n = n, mu = rep(0, M), Sigma = Sigma)
+  }
+  colnames(Z) <- paste0("z", 1:M)
+  X1 <- cbind(3 * cos(Z[, 1]) + 2 * rnorm(n))
+  X2 = rnorm(n)
+  X3 = rbinom(n, 1, 0.3)
+  eps <- rnorm(n, sd = sqrt(sigsq.true))
+  h <- apply(Z, 1, HFun)
+  mu <- X1 * beta.true +X2+1.2*X3+ h
+  y <- drop(mu + eps)
+  if (family == "binomial") {
+    ystar <- y
+    y <- ifelse(ystar > 0, 1, 0)
+  }
+  dat <- list(n = n, M = M, sigsq.true = sigsq.true, beta.true = beta.true,
+              Z = Z, h = h, X = data.frame(X1 = X1, X2 = X2, X3 = X3), y = y, hfun = hfun, HFun = HFun,
+              family = family)
+  if (family == "binomial") {
+    dat$ystar <- ystar
+  }
+  dat
+}
 
 # weighted sampling ------------------------------------------------------------
 
+#' used for knot sampling
 #' @param R exposures
 #' @param nd number of the representative observations
 #' @param num_nn number of nearest neighbor
@@ -24,6 +127,9 @@
 
 
 sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
+  nd = as.integer(nd)
+  num_nn = as.integer(num_nn)
+
   R_ic <- data.frame(R) %>%
     mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.)))))
 
@@ -471,22 +577,25 @@ a_kmbayes = function (y, Z, X = NULL, iter = 1000, family = "gaussian", id = NUL
 
 
 
-#' used for overall effect plot
+#' used for overall effect plot with varying values for exposures
 #' @param fit An object containing the results returned by a the kmbayes function
 #' @param y a vector of outcome data of length n
 #' @param Z an n-by-M matrix of predictor variables to be included in the h function. Each row represents an observation and each column represents an predictor
 #' @param X an n-by-K matrix of covariate data where each row represents an observation and each column represents a covariate. Should not contain an intercept column
-#' @param qs vector of quantiles at which to calculate the overall risk summary
-#' @param q.fixed a second quantile at which to compare the estimated h function
+#' @param quants vector of quantiles at which to calculate the overall risk summary
+#' @param newz A dataset of counterfactual scenarios of interest, representing hypothetical exposure profiles. By default, all exposures are increased simultaneously from their 25% quantiles to 75% quantiles with 1% quantiles.
 #' @param method method for obtaining posterior summaries at a vector of new points. Options are "approx" and "exact"; defaults to "approx", which is faster particularly for large datasets; see details
 #' @param sel selects which iterations of the MCMC sampler to use for inference; see details
 #' @param data.comps a list including objects used for approximate gaussian process, which is generated by function "a_kmbayes"
+#' @param point1 reference point. By default, it is specified as c(median(X1), median(X2), median(X3), …). You can set it to any value of interest – for example, the standard (recommended) exposure level.
 #' @export
 
 
 
-a_OverallRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, qs = seq(0.25, 0.75,
-                                                                                by = 0.05), q.fixed = 0.5, method = "approx", sel = NULL, data.comps) {
+
+a_OverallRiskSummaries_vary = function (fit, y = NULL, Z = NULL, X = NULL, newz = NULL , method = "approx", sel = NULL,
+                                        data.comps, point1 = NULL)
+{
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -495,26 +604,96 @@ a_OverallRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, qs = seq(0
     if (is.null(X))
       X <- fit$X
   }
-  point1 <- apply(Z, 2, quantile, q.fixed)
 
-  risk_overall = bind_rows(lapply(qs, function(quant){
-    cc <- c(-1, 1)
-    point2 = apply(Z, 2, quantile, quant)
-    newz <- rbind(point1, point2)
-    preds <- a_ComputePostmeanHnew(fit = fit,
-                                    y = y, Z = Z, X = X, Znew = newz, sel = sel, method = method, data.comps = data.comps)
-    diff <- drop(cc %*% preds$postmean)
-    diff.sd <- drop(sqrt(cc %*% preds$postvar %*% cc))
-    return(data.frame(quant = quant, est_p = diff, sd_p = diff.sd, est_e = preds$postmean[2], sd_e = preds$postvar[4]^0.5))
-  }))
+  if(is.null(newz)){
+
+    quants = seq(0.25, 0.75, 0.01)
+
+    newz = lapply(1:ncol(Z), function(i){
+
+      qf = data.frame(X = quantile(Z[, i], quants))
+      names(qf) = names(data.frame(Z))[i]
+      return(qf)
+    }) %>% bind_cols()
+  }
+
+  if(is.null(point1)){
+    point1 = data.frame(t(apply(Z, 2, median, na.rm = TRUE)))
+  }
+
+
+  names(newz) = names(data.frame(Z))
+
+
+  hits <- which(apply(newz, 1, function(row) all(row == point1)))
+
+  if(length(hits) == 0){
+    newz <- rbind(point1, newz)
+    which_point1 <- 1L
+
+    preds <- aBKMR:::a_ComputePostmeanHnew(fit = fit, y = y, Z = Z,
+                                           X = X, Znew = newz, sel = sel, method = method, data.comps = data.comps)
 
 
 
-  return(risk_overall)
+
+
+    n <- nrow(newz)
+
+    C <- diag(n)
+
+
+    C[,which_point1] <- C[,which_point1] - 1
+
+    diff <- as.vector(C %*% preds$postmean)
+
+
+    Sigma_diff <- C %*% preds$postvar %*% t(C)
+
+    risk_overall = cbind(newz[-1,],
+                         est_p = diff[-1], sd_p = sqrt(diag(Sigma_diff))[-1],
+                         est_e = preds$postmean[-1], sd_e = c(diag(preds$postvar)^0.5)[-1]
+    )
+    return(list(preds_e = list(postmean = preds$postmean[-1], postvar = preds$postvar[-1, -1]), preds_p = list(postmean = diff[-1], postvar = Sigma_diff[-1, -1]), risk_overall = risk_overall))
+  } else{
+    which_point1 <- hits[1]
+    preds <- aBKMR:::a_ComputePostmeanHnew(fit = fit, y = y, Z = Z,
+                                           X = X, Znew = newz, sel = sel, method = method, data.comps = data.comps)
+
+
+
+
+
+    n <- nrow(newz)
+
+    C <- diag(n)
+
+
+    C[,which_point1] <- C[,which_point1] - 1
+
+    diff <- as.vector(C %*% preds$postmean)
+
+
+    Sigma_diff <- C %*% preds$postvar %*% t(C)
+
+
+
+    risk_overall = cbind(newz,
+                         est_p = diff, sd_p = sqrt(diag(Sigma_diff)),
+                         est_e = preds$postmean, sd_e = diag(preds$postvar)^0.5
+    )
+    return(list(preds_e = preds, preds_p = list(postmean = diff, postvar = Sigma_diff), risk_overall = risk_overall))
+  }
+
+
+
+
+
+
+
+
+
 }
-
-
-
 
 #' used for multivariate interaction plot
 #' @param fit An object containing the results returned by a the kmbayes function
@@ -533,8 +712,8 @@ a_OverallRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, qs = seq(0
 
 
 a_SingVarRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, which.z = 1:ncol(Z),
-                                    qs.diff = c(0.25, 0.75), q.fixed = c(0.25, 0.5, 0.75), method = "approx",
-                                    sel = NULL, z.names = colnames(Z), ...) {
+                                   qs.diff = c(0.25, 0.75), q.fixed = c(0.25, 0.5, 0.75), method = "approx",
+                                   sel = NULL, z.names = colnames(Z), ...) {
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -560,8 +739,8 @@ a_SingVarRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, data.comps
 
     cc <- c(-1, 1)
     newz <- rbind(point1, point2)
-    preds <- a_ComputePostmeanHnew(fit = fit,
-                                    y = y, Z = Z, X = X, data.comps = data.comps, Znew = newz, sel = sel, method = method)
+    preds <- aBKMR:::a_ComputePostmeanHnew(fit = fit,
+                                   y = y, Z = Z, X = X, data.comps = data.comps, Znew = newz, sel = sel, method = method)
     diff <- drop(cc %*% preds$postmean)
     diff.sd <- drop(sqrt(cc %*% preds$postvar %*% cc))
     return( data.frame(q.fixed = q.fixed[para$qf[i]], variable = z.names[para$wz[i]], est_p = diff, sd_p = diff.sd, est_e = preds$postmean[2], sd_e = preds$postvar[4]^0.5))
@@ -575,49 +754,98 @@ a_SingVarRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, data.comps
 }
 
 
-#' used for univariate concentration-response curves of all variables
+
+#' used for univariate effect plot
 #' @param fit An object containing the results returned by a the kmbayes function
 #' @param y a vector of outcome data of length n
 #' @param Z an n-by-M matrix of predictor variables to be included in the h function. Each row represents an observation and each column represents an predictor
 #' @param X an n-by-K matrix of covariate data where each row represents an observation and each column represents a covariate. Should not contain an intercept column
 #' @param data.comps a list including objects used for approximate gaussian process, which is generated by function "a_kmbayes"
-#' @param which.z vector indicating which variables (columns of Z) for which the summary should be computed
+#' @param quants specify the quantiles of exposures
 #' @param method method for obtaining posterior summaries at a vector of new points. Options are "approx" and "exact"; defaults to "approx", which is faster particularly for large datasets; see details
-#' @param ngrid number of grid points to cover the range of each predictor (column in Z)
-#' @param q.fixed vector of quantiles at which to fix the remaining predictors in Z
 #' @param sel logical expression indicating samples to keep; defaults to keeping the second half of all samples
-#' @param min.plot.dist specifies a minimum distance that a new grid point needs to be from an observed data point in order to compute the prediction; points further than this will not be computed
-#' @param center flag for whether to scale the exposure-response function to have mean zero
-#' @param z.names optional vector of names for the columns of z
-#' @param ... other arguments to pass on to the prediction function
 #' @export
 
 
-a_PredictorResponseUnivar = function (fit, y = NULL, Z = NULL, X = NULL, data.comps, which.z = 1:ncol(Z),
-                                       method = "approx", ngrid = 50, q.fixed = 0.5, sel = NULL,
-                                       min.plot.dist = Inf, center = TRUE, z.names = colnames(Z),
-                                       ...) {
+a_PredictorResponseUnivar = function (fit, y = NULL, Z = NULL, X = NULL, quants = seq(0.25, 0.75, 0.01), method = "approx", sel = NULL,
+                                   data.comps, point1 = NULL) {
+
   if (inherits(fit, "bkmrfit")) {
-    y <- fit$y
-    Z <- fit$Z
-    X <- fit$X
+    if (is.null(y))
+      y <- fit$y
+    if (is.null(Z))
+      Z <- fit$Z
+    if (is.null(X))
+      X <- fit$X
   }
-  if (is.null(z.names)) {
-    z.names <- paste0("z", 1:ncol(Z))
+
+  if(is.null(point1)){
+    point1 = apply(Z, 2, median, na.rm = TRUE)
   }
-  df <- dplyr::tibble()
-  for (i in which.z) {
-    res <- a_PredictorResponseUnivarVar(whichz = i, fit = fit,
-                                         y = y, Z = Z, X = X, data.comps = data.comps, method = method, ngrid = ngrid,
-                                         q.fixed = q.fixed, sel = sel, min.plot.dist = min.plot.dist,
-                                         center = center, z.names = z.names,...)
-    df0 <- dplyr::mutate(res, variable = z.names[i]) %>%
-      dplyr::select_at(c("variable", "z", "est", "se"))
-    df <- dplyr::bind_rows(df, df0)
-  }
-  df$variable <- factor(df$variable, levels = z.names[which.z])
-  df
+
+  newz_temp = lapply(1:length(quants), function(i) point1) %>% bind_rows()
+
+
+  s_res = lapply(1:length_z, function(i){
+    newz = newz_temp
+    newz[,i] = quantile(Z[, i], quants, na.rm = T)
+    res = a_OverallRiskSummaries_vary(fit, y = NULL, Z = NULL, X = NULL, newz = newz , method = "approx", sel = NULL, data.comps, point1 = point1)
+    res$est = com_je(postmean = res$preds_p$postmean, postvar = res$preds_p$postvar, X = quants*10, B = 1000)
+    res$risk_overall$quants = quants
+
+    res$risk_overall = res$risk_overall[, c("quants", glue("z{i}"), "est_p", "sd_p")]
+    names(res$risk_overall) = c("quants", "z", "est", "se")
+    res$risk_overall$vars = names(data.frame(Z))[i]
+
+    return(res)
+  })
+
 }
+
+
+#' used for overall effect plot
+#' @param fit An object containing the results returned by a the kmbayes function
+#' @param y a vector of outcome data of length n
+#' @param Z an n-by-M matrix of predictor variables to be included in the h function. Each row represents an observation and each column represents an predictor
+#' @param X an n-by-K matrix of covariate data where each row represents an observation and each column represents a covariate. Should not contain an intercept column
+#' @param qs vector of quantiles at which to calculate the overall risk summary
+#' @param q.fixed a second quantile at which to compare the estimated h function
+#' @param method method for obtaining posterior summaries at a vector of new points. Options are "approx" and "exact"; defaults to "approx", which is faster particularly for large datasets; see details
+#' @param sel selects which iterations of the MCMC sampler to use for inference; see details
+#' @param data.comps a list including objects used for approximate gaussian process, which is generated by function "a_kmbayes"
+#' @export
+
+
+
+a_OverallRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, qs = seq(0.25, 0.75,
+                                                                               by = 0.05), q.fixed = 0.5, method = "approx", sel = NULL, data.comps) {
+  if (inherits(fit, "bkmrfit")) {
+    if (is.null(y))
+      y <- fit$y
+    if (is.null(Z))
+      Z <- fit$Z
+    if (is.null(X))
+      X <- fit$X
+  }
+  point1 <- apply(Z, 2, quantile, q.fixed)
+
+  risk_overall = bind_rows(lapply(qs, function(quant){
+    cc <- c(-1, 1)
+    point2 = apply(Z, 2, quantile, quant)
+    newz <- rbind(point1, point2)
+    preds <- a_ComputePostmeanHnew(fit = fit,
+                                   y = y, Z = Z, X = X, Znew = newz, sel = sel, method = method, data.comps = data.comps)
+    diff <- drop(cc %*% preds$postmean)
+    diff.sd <- drop(sqrt(cc %*% preds$postvar %*% cc))
+    return(data.frame(quant = quant, est_p = diff, sd_p = diff.sd, est_e = preds$postmean[2], sd_e = preds$postvar[4]^0.5))
+  }))
+
+
+
+  return(risk_overall)
+}
+
+
 
 
 #' used for bivariate interaction plot
@@ -709,57 +937,35 @@ a_PredictorResponseBivar = function (fit, y = NULL, Z = NULL, X = NULL, data.com
 # quantitative estimation -------------------------------------------------
 
 #' used for joint effect estimation
-#' @param je_df data frame of overall effect obtained by a_OverallRiskSummaries
-#' @param s the number of g-formula resampling
+#' @param postmean prrdicted values of y
+#' @param postvar variance-covariance matrix of predicted y
+#' @param B the number of bootstrap. By default, it is 1000
 #' @export
 
-com_je = function(je_df, s){
-  temp_df = je_df
-  gf_list = unlist(lapply(1:s, function(j){
-    #set.seed(j)
-    for (i in 1:nrow(je_df)) {
-      temp_df$temp_y[i] = rnorm(1, mean = je_df$est_e[i], sd = je_df$sd_e[i])
-    }
+com_je = function(postmean, postvar, X, B=1000){
 
-    temp_coe = glm(temp_y~quant, temp_df, family = "gaussian")[["coefficients"]][2]
-    return(temp_coe)
+  coef_df = lapply(1:B, function(i){
 
-  }))
+    y_star <- mvrnorm(n = 1, mu = postmean, Sigma = postvar)
 
-  gf_res = data.frame(est = "Overall effect", est = mean(gf_list), upper = mean(gf_list)+1.96*sd(gf_list), lower = mean(gf_list)-1.96*sd(gf_list))
+    fit_b   <- lm(y_star ~ X)
 
-  return(gf_res)
+    return(coef(fit_b))
+
+
+  }) %>% bind_rows()
+
+  return(data.frame(est = coef(lm(postmean~X))[2],
+                    lower_quant = quantile(coef_df$X, 0.025),
+                    upper_quant = quantile(coef_df$X, 0.975),
+                    sd = sd(coef_df$X),
+                    lower_norm = coef(lm(postmean~X))[2] - 1.96*sd(coef_df$X),
+                    upper_norm = coef(lm(postmean~X))[2] + 1.96*sd(coef_df$X)
+
+  ))
+
 }
 
-#' used for univariate effect estimation
-#' @param ue_obj data frame of univariate effect obtained by a_PredictorResponseUnivar
-#' @param s the number of g-formula resampling
-#' @export
-
-com_ue = function(ue_obj, s){
-  est_df = lapply(as.character(unique(ue_obj$variable)), function(i){
-    temp_data = ue_obj %>% filter(variable == i)
-    temp_data$temp_y=NA
-    gf_res = unlist(lapply(1:s, function(s) {
-      #set.seed(s)
-      for (m in 1:nrow(temp_data)) {
-        temp_data$temp_y[m] = rnorm(1, mean = temp_data$est_e[m],
-                                    sd = temp_data$sd_e[m])
-      }
-      temp_coe = glm(temp_y ~ q.fixed, temp_data, family = "gaussian")[["coefficients"]][2]
-      return(temp_coe)
-    }))
-
-    temp_res = data.frame(beta = mean(gf_res), lower = mean(gf_res)-1.96*sd(gf_res), upper = mean(gf_res)+1.96*sd(gf_res)) %>%
-      mutate(fin_est = glue("{sprintf('%.3f', beta)} ({sprintf('%.3f', lower)}, {sprintf('%.3f', upper)})"))
-
-
-    return(cbind(variable = i, temp_res))
-
-  }) %>% bind_rows() %>% mutate(var_beta = glue("{variable} [{fin_est}]"))
-
-  return(est_df)
-}
 
 
 #' used for bivariate interaction estimation

@@ -2,7 +2,7 @@
 % Please edit documentation in R/aBKMR.R
 \name{sam_py_r}
 \alias{sam_py_r}
-\title{advanced BKMR method}
+\title{used for knot sampling}
 \usage{
 sam_py_r(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F)
 }
@@ -22,6 +22,5 @@ sam_py_r(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F)
 \item{w}{whether the weight is used}
 }
 \description{
-This packages achieves acceleration of BKMR and provide quantitative estimates
-It includes three parts: weighted sampling, approximate gaussian process, and quantization
+used for knot sampling
 }

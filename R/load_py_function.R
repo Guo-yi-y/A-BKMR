@@ -1,12 +1,12 @@
 # R/load_py_function.R
 
 .onLoad <- function(libname, pkgname) {
-  # 1. 确保加载 reticulate 包
+  # 1. Ensure the reticulate package is loaded
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     stop("Please install the 'reticulate' package first.")
   }
 
-  # 2. 检查 Python 是否已安装
+  # 2. Check whether Python is installed
   python_installed <- tryCatch({
     reticulate::py_config()
     TRUE
@@ -21,14 +21,14 @@
       reticulate::install_python()
       packageStartupMessage("Python has been successfully installed.")
     }, error = function(e) {
-      packageStartupMessage("Failed to install Python. Please install Python manually.")
+      packageStartupMessage("Failed to install Python. Please install it manually.")
       packageStartupMessage("You can install Python via: https://www.python.org/downloads/")
     })
   } else {
-    packageStartupMessage("Python is installed. Proceeding with the package load...")
+    packageStartupMessage("Python is installed. Proceeding with package load...")
   }
 
-  # 3. 检查并安装所需的 Python 包
+  # 3. Verify and install required Python packages
   required_packages <- c("numpy", "mpmath", "pandas", "scipy")
 
   for (pkg in required_packages) {
@@ -52,7 +52,7 @@
     }
   }
 
-  # 4. 加载 Python 文件
+  # 4. Load the Python functions file
   python_file <- system.file("python", "py_functions.py", package = pkgname)
   if (python_file == "") {
     stop("Python file 'py_functions.py' not found.")
@@ -60,6 +60,12 @@
 
   reticulate::source_python(python_file)
 }
+
+utils::globalVariables(c(
+  "ComputePostmeanHnew.exact", "K", "Vinv", "est",
+  "variable", "variable1", "variable2", "z1", "."
+))
+
 
 utils::globalVariables(c(
   "ComputePostmeanHnew.exact", "K", "Vinv", "est",

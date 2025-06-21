@@ -16,6 +16,7 @@ Imports:
     fields,
     glue,
     magrittr,
+    MASS,
     reticulate,
     statmod,
     tmvtnorm,
