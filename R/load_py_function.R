@@ -1,73 +1,41 @@
-# R/load_py_function.R
+## R/load_py_function.R
 
 .onLoad <- function(libname, pkgname) {
-  # 1. Ensure the reticulate package is loaded
+  # 1. Ensure reticulate is available
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     stop("Please install the 'reticulate' package first.")
   }
 
-  # 2. Check whether Python is installed
-  python_installed <- tryCatch({
-    reticulate::py_config()
-    TRUE
-  }, error = function(e) {
-    FALSE
-  })
-
-  if (!python_installed) {
-    packageStartupMessage("Python is not installed or not detected.")
-    packageStartupMessage("Attempting to install Python using reticulate::install_python()...")
-    tryCatch({
-      reticulate::install_python()
-      packageStartupMessage("Python has been successfully installed.")
-    }, error = function(e) {
-      packageStartupMessage("Failed to install Python. Please install it manually.")
-      packageStartupMessage("You can install Python via: https://www.python.org/downloads/")
-    })
-  } else {
-    packageStartupMessage("Python is installed. Proceeding with package load...")
+  # 2. Install Miniconda if missing
+  if (!reticulate::miniconda_exists()) {
+    packageStartupMessage("Miniconda not found. Installing Miniconda...")
+    reticulate::install_miniconda()
   }
 
-  # 3. Verify and install required Python packages
-  required_packages <- c("numpy", "mpmath", "pandas", "scipy")
-
-  for (pkg in required_packages) {
-    installed <- tryCatch({
-      reticulate::py_run_string(paste("import", pkg))
-      TRUE
-    }, error = function(e) {
-      FALSE
-    })
-
-    if (!installed) {
-      packageStartupMessage(paste(pkg, "not found. Installing..."))
-      tryCatch({
-        reticulate::py_install(pkg)
-        packageStartupMessage(paste(pkg, "has been successfully installed."))
-      }, error = function(e) {
-        packageStartupMessage(paste("Failed to install", pkg, ". Please install it manually."))
-      })
-    } else {
-      packageStartupMessage(paste(pkg, "is already installed."))
-    }
+  # 3. Create (once) and activate a persistent conda environment
+  envname <- "aBKMR-env"
+  conda_info <- reticulate::conda_list()
+  if (!(envname %in% conda_info$name)) {
+    packageStartupMessage(sprintf("Creating conda environment '%s' and installing Python dependencies...", envname))
+    reticulate::conda_create(envname)
+    reticulate::conda_install(envname,
+                              packages = c("numpy", "pandas", "scipy", "mpmath"),
+                              channel = "conda-forge")
   }
+  # Always use the persistent env
+  reticulate::use_condaenv(envname, required = TRUE)
+  packageStartupMessage(sprintf("Using conda environment '%s'", envname))
 
   # 4. Load the Python functions file
   python_file <- system.file("python", "py_functions.py", package = pkgname)
   if (python_file == "") {
-    stop("Python file 'py_functions.py' not found.")
+    stop("Python file 'py_functions.py' not found in inst/python/ folder.")
   }
-
   reticulate::source_python(python_file)
 }
 
-utils::globalVariables(c(
-  "ComputePostmeanHnew.exact", "K", "Vinv", "est",
-  "variable", "variable1", "variable2", "z1", "."
-))
-
-
-utils::globalVariables(c(
-  "ComputePostmeanHnew.exact", "K", "Vinv", "est",
-  "variable", "variable1", "variable2", "z1", "."
-))
+# Register global variables
+utils::globalVariables(
+  c("ComputePostmeanHnew.exact", "K", "Vinv", "est",
+    "variable", "variable1", "variable2", "z1", ".")
+)
