@@ -575,7 +575,9 @@ a_kmbayes = function (y, Z, X = NULL, iter = 1000, family = "gaussian", id = NUL
 # output ------------------------------------------------------------------
 
 
+#' @title output
 
+#' @description used for generating plot and estimate of effect
 
 #' used for overall effect plot with varying values for exposures
 #' @param fit An object containing the results returned by a the kmbayes function

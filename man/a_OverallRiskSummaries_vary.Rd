@@ -2,7 +2,7 @@
 % Please edit documentation in R/aBKMR.R
 \name{a_OverallRiskSummaries_vary}
 \alias{a_OverallRiskSummaries_vary}
-\title{used for overall effect plot with varying values for exposures}
+\title{output}
 \usage{
 a_OverallRiskSummaries_vary(
   fit,
@@ -38,5 +38,6 @@ a_OverallRiskSummaries_vary(
 \item{quants}{vector of quantiles at which to calculate the overall risk summary}
 }
 \description{
+used for generating plot and estimate of effect
 used for overall effect plot with varying values for exposures
 }
