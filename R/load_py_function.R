@@ -1,12 +1,10 @@
-# R/load_py_function.R
-
+## R/load_py_function.R
 .onLoad <- function(libname, pkgname) {
-  # 1. 确保加载 reticulate 包
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     stop("Please install the reticulate package first.")
   }
-  library(reticulate)
-  # 2. 检查 Python 是否已安装
+
+  # 检查是否已安装 Python
   python_installed <- tryCatch({
     reticulate::py_config()
     TRUE
@@ -17,7 +15,7 @@
   if (!python_installed) {
     message("Python is not installed or not detected.")
 
-    # 尝试通过 Miniconda 安装 Python
+    # 自动安装 Python（通过 Miniconda）
     message("Attempting to install Python using reticulate::install_python()...")
     tryCatch({
       reticulate::install_python()
@@ -30,8 +28,8 @@
     message("Python is installed. Proceeding with the package load...")
   }
 
-  # 3. 检查并安装所需的 Python 包
-  required_packages <- c("numpy", "mpmath", "pandas", "scipy")
+  # 检查并安装所需的 Python 包
+  required_packages <- c("numpy", "mpmath", "pandas")
 
   for (pkg in required_packages) {
     # 检查 Python 包是否已安装
@@ -56,13 +54,4 @@
       message(paste(pkg, "is already installed.", sep = " "))
     }
   }
-
-  # 4. 加载 Python 文件
-  python_file <- system.file("python", "py_functions.py", package = pkgname)
-  if (python_file == "") {
-    stop("Python file 'py_functions.py' not found.")
-  }
-
-  # 加载 Python 文件
-  reticulate::source_python(python_file)
 }
