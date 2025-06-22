@@ -1,7 +1,8 @@
 # R/load_py_function.R
-options(timeout = 600)
-options(download.file.method = "wininet")
+
 .onLoad <- function(libname, pkgname) {
+  options(timeout = 600)
+  options(download.file.method = "wininet")
   # 1. 先保证 reticulate 包存在
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     packageStartupMessage("[aBKMR] 请先安装 reticulate 包。")
