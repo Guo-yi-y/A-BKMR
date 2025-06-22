@@ -38,7 +38,7 @@ library(aBKMR)
 library(bkmr)
 library(ggplot2)
 
-dat <- sim_data_gy(n = 500, M = 5, ind=1:3, Zgen="realistic", family = "gaussian"    )
+dat <- sim_data(n = 500, M = 5, ind=1:3, Zgen="realistic", family = "gaussian"    )
 
 k_id = sam_py_r(R = dat$Z , nd = 20, num_nn = 20, w = F)
 
