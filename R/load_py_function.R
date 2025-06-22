@@ -1,5 +1,6 @@
 # R/load_py_function.R
-
+options(timeout = 600)
+options(download.file.method = "wininet")
 .onLoad <- function(libname, pkgname) {
   # 1. 先保证 reticulate 包存在
   if (!requireNamespace("reticulate", quietly = TRUE)) {
