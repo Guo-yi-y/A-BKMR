@@ -1,42 +1,68 @@
 # R/load_py_function.R
 
-.py_env <- new.env(parent = emptyenv())
-
 .onLoad <- function(libname, pkgname) {
-  # ... 只做探测和提示，不做 source_python() ...
-}
+  # 1. 确保加载 reticulate 包
+  if (!requireNamespace("reticulate", quietly = TRUE)) {
+    stop("Please install the reticulate package first.")
+  }
+  library(reticulate)
+  # 2. 检查 Python 是否已安装
+  python_installed <- tryCatch({
+    reticulate::py_config()
+    TRUE
+  }, error = function(e) {
+    FALSE
+  })
 
-.onAttach <- function(libname, pkgname) {
-  if (!interactive()) return()
-  if (!requireNamespace("reticulate", quietly = TRUE)) return()
-  if (inherits(try(reticulate::py_config(), silent = TRUE), "try-error")) return()
+  if (!python_installed) {
+    message("Python is not installed or not detected.")
 
-  # 再次检查必要的 Python 包
-  req <- c("numpy","mpmath","pandas","scipy")
-  miss <- req[!vapply(req, reticulate::py_module_available, logical(1))]
-  if (length(miss)) {
-    packageStartupMessage(
-      sprintf("❌ 缺少 Python 包：%s\n", paste(miss, collapse = ", ")),
-      "  请先运行：reticulate::py_install(c(", paste(sprintf("'%s'", miss), collapse = ", "), "))"
-    )
-    return()
+    # 尝试通过 Miniconda 安装 Python
+    message("Attempting to install Python using reticulate::install_python()...")
+    tryCatch({
+      reticulate::install_python()
+      message("Python has been successfully installed.")
+    }, error = function(e) {
+      message("Failed to install Python. Please install Python manually.")
+      message("You can install Python via: https://www.python.org/downloads/")
+    })
+  } else {
+    message("Python is installed. Proceeding with the package load...")
   }
 
-  # import py_functions.py
-  python_dir <- system.file("python", package = pkgname)
-  fpath <- file.path(python_dir, "py_functions.py")
-  if (!file.exists(fpath)) {
-    packageStartupMessage("❌ 找不到 py_functions.py，跳过 Python 加载。")
-    return()
+  # 3. 检查并安装所需的 Python 包
+  required_packages <- c("numpy", "mpmath", "pandas", "scipy")
+
+  for (pkg in required_packages) {
+    # 检查 Python 包是否已安装
+    installed <- tryCatch({
+      reticulate::py_run_string(paste("import", pkg))
+      TRUE
+    }, error = function(e) {
+      FALSE
+    })
+
+    if (!installed) {
+      message(paste(pkg, "not found. Installing...", sep = " "))
+
+      # 安装缺失的 Python 包
+      tryCatch({
+        reticulate::py_install(pkg)
+        message(paste(pkg, "has been successfully installed.", sep = " "))
+      }, error = function(e) {
+        message(paste("Failed to install", pkg, ". Please install it manually.", sep = " "))
+      })
+    } else {
+      message(paste(pkg, "is already installed.", sep = " "))
+    }
   }
 
-  mod <- reticulate::import_from_path(
-    module  = "py_functions",
-    path    = python_dir,
-    convert = TRUE
-  )
-  # 把 mod 存到我们自己创建的环境里
-  .py_env$mod <- mod
-  packageStartupMessage("✅ 已加载 Python 模块 py_functions 到 .py_env$mod")
-}
+  # 4. 加载 Python 文件
+  python_file <- system.file("python", "py_functions.py", package = pkgname)
+  if (python_file == "") {
+    stop("Python file 'py_functions.py' not found.")
+  }
 
+  # 加载 Python 文件
+  reticulate::source_python(python_file)
+}
