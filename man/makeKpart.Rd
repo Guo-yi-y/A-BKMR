@@ -6,6 +6,13 @@
 \usage{
 makeKpart(r, Z1, Z2 = NULL)
 }
+\arguments{
+\item{y}{outcome}
+
+\item{x}{covariates}
+
+\item{Z}{exposures}
+}
 \value{
 objects for consquent computation
 }

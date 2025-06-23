@@ -2,8 +2,7 @@
 % Please edit documentation in R/aBKMR.R
 \name{a_kmbayes}
 \alias{a_kmbayes}
-\title{advanced BKMR model fit
-the parameters in function a_kmbayes is same as those in kmbayes in packages "bkmr"}
+\title{the parameters in function a_kmbayes is same as those in kmbayes in packages "bkmr"}
 \usage{
 a_kmbayes(
   y,
@@ -24,40 +23,6 @@ a_kmbayes(
   est.h = TRUE
 )
 }
-\arguments{
-\item{y}{a vector of outcome data of length n}
-
-\item{Z}{an n-by-M matrix of predictor variables to be included in the h function. Each row represents an observation and each column represents an predictor}
-
-\item{X}{covariates}
-
-\item{iter}{number of iterations to run the sampler}
-
-\item{family}{a description of the error distribution and link function to be used in the model. Currently implemented for gaussian and binomial families}
-
-\item{id}{optional vector (of length n) of grouping factors for fitting a model with a random intercept. If NULL then no random intercept will be included}
-
-\item{verbose}{TRUE or FALSE: flag indicating whether to print intermediate diagnostic information during the model fitting}
-
-\item{Znew}{optional matrix of new predictor values at which to predict h, where each row represents a new observation. This will slow down the model fitting, and can be done as a post-processing step using SamplePred}
-
-\item{starting.values}{list of starting values for each parameter. If not specified default values will be chosen.}
-
-\item{control.params}{list of parameters specifying the prior distributions and tuning parameters for the MCMC algorithm. If not specified default values will be chosen}
-
-\item{varsel}{TRUE or FALSE}
-
-\item{groups}{optional vector (of length M) of group indicators for fitting hierarchical variable selection if varsel=TRUE. If varsel=TRUE without group specification, component-wise variable selections will be performed}
-
-\item{knots}{optional matrix of knot locations for implementing the Gaussian predictive process of Banerjee et al. (2008). Currently only implemented for models without a random intercept}
-
-\item{ztest}{optional vector indicating on which variables in Z to conduct variable selection (the remaining variables will be forced into the model)}
-
-\item{rmethod}{for those predictors being forced into the h function, the method for sampling the r[m] values. Takes the value of 'varying' to allow separate r[m] for each predictor; 'equal' to force the same r[m] for each predictor; or 'fixed' to fix the r[m] to their starting values}
-
-\item{est.h}{TRUE or FALSE: indicator for whether to sample from the posterior distribution of the subject-specific effects h_i within the main sampler. This will slow down the model fitting}
-}
 \description{
-advanced BKMR model fit
 the parameters in function a_kmbayes is same as those in kmbayes in packages "bkmr"
 }
