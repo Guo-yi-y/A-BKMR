@@ -30,34 +30,16 @@
     message("Python is installed. Proceeding with the package load...")
   }
 
-  # 3. 检查并安装所需的 Python 包
-  required_packages <- c("numpy", "mpmath", "pandas", "scipy")
+  # 3. 声明 Python 依赖（只执行一次，后续会话重用同一环境）
+  reticulate::py_require(c("numpy", "mpmath", "pandas", "scipy"))
 
-  for (pkg in required_packages) {
-    # 检查 Python 包是否已安装
-    installed <- tryCatch({
-      reticulate::py_run_string(paste("import", pkg))
-      TRUE
-    }, error = function(e) {
-      FALSE
-    })
+  # 4. 延迟加载（delay_load）Python 模块，防止在 onLoad 时马上初始化 Python
+  numpy  <<- reticulate::import("numpy",  delay_load = TRUE)
+  mpmath <<- reticulate::import("mpmath", delay_load = TRUE)
+  pandas <<- reticulate::import("pandas", delay_load = TRUE)
+  scipy  <<- reticulate::import("scipy",  delay_load = TRUE)
 
-    if (!installed) {
-      message(paste(pkg, "not found. Installing...", sep = " "))
-
-      # 安装缺失的 Python 包
-      tryCatch({
-        reticulate::py_install(pkg)
-        message(paste(pkg, "has been successfully installed.", sep = " "))
-      }, error = function(e) {
-        message(paste("Failed to install", pkg, ". Please install it manually.", sep = " "))
-      })
-    } else {
-      message(paste(pkg, "is already installed.", sep = " "))
-    }
-  }
-
-  # 4. 加载 Python 文件
+  # 5. 加载 Python 文件
   python_file <- system.file("python", "py_functions.py", package = pkgname)
   if (python_file == "") {
     stop("Python file 'py_functions.py' not found.")
