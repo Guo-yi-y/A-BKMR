@@ -1,57 +1,68 @@
 # R/load_py_function.R
 
-# Automatically check Python environment, required packages, and source Python script on package load
 .onLoad <- function(libname, pkgname) {
-  # 1. Check for 'reticulate' package
+  # 1. 确保加载 reticulate 包
   if (!requireNamespace("reticulate", quietly = TRUE)) {
-    packageStartupMessage(
-      "⚠️ 'reticulate' package not found. Please install it via: install.packages('reticulate')"
-    )
-    return()
+    stop("Please install the reticulate package first.")
+  }
+  library(reticulate)
+  # 2. 检查 Python 是否已安装
+  python_installed <- tryCatch({
+    reticulate::py_config()
+    TRUE
+  }, error = function(e) {
+    FALSE
+  })
+
+  if (!python_installed) {
+    message("Python is not installed or not detected.")
+
+    # 尝试通过 Miniconda 安装 Python
+    message("Attempting to install Python using reticulate::install_python()...")
+    tryCatch({
+      reticulate::install_python()
+      message("Python has been successfully installed.")
+    }, error = function(e) {
+      message("Failed to install Python. Please install Python manually.")
+      message("You can install Python via: https://www.python.org/downloads/")
+    })
+  } else {
+    message("Python is installed. Proceeding with the package load...")
   }
 
-  # 2. Verify Python availability
-  py_ok <- reticulate::py_available()
-  if (!py_ok) {
-    packageStartupMessage(
-      "⚠️ Python environment not detected. To install Miniconda, run in R console:\n",
-      "    install.packages('reticulate'); reticulate::install_miniconda()"
-    )
-    return()
-  }
+  # 3. 检查并安装所需的 Python 包
+  required_packages <- c("numpy", "mpmath", "pandas", "scipy")
 
-  # 3. Print Python configuration and check required Python packages
-  cfg <- reticulate::py_config()
-  packageStartupMessage(
-    sprintf("✅ Python detected at %s (version %s, %d-bit)",
-            cfg$python, cfg$version, cfg$bitarchitecture)
-  )
-  required_pkgs <- c("numpy", "mpmath", "pandas", "scipy")
-  for (pkg in required_pkgs) {
-    if (reticulate::py_module_available(pkg)) {
-      packageStartupMessage(sprintf("  ✅ Python package '%s' is installed.", pkg))
+  for (pkg in required_packages) {
+    # 检查 Python 包是否已安装
+    installed <- tryCatch({
+      reticulate::py_run_string(paste("import", pkg))
+      TRUE
+    }, error = function(e) {
+      FALSE
+    })
+
+    if (!installed) {
+      message(paste(pkg, "not found. Installing...", sep = " "))
+
+      # 安装缺失的 Python 包
+      tryCatch({
+        reticulate::py_install(pkg)
+        message(paste(pkg, "has been successfully installed.", sep = " "))
+      }, error = function(e) {
+        message(paste("Failed to install", pkg, ". Please install it manually.", sep = " "))
+      })
     } else {
-      packageStartupMessage(
-        sprintf(
-          "  ❌ Python package '%s' not found; you can install it in R via: reticulate::py_install('%s')",
-          pkg, pkg
-        )
-      )
+      message(paste(pkg, "is already installed.", sep = " "))
     }
   }
 
-  # 4. Source the Python script from inst/python
+  # 4. 加载 Python 文件
   python_file <- system.file("python", "py_functions.py", package = pkgname)
   if (python_file == "") {
-    stop("❌ Python script 'py_functions.py' not found. Please ensure the package is installed correctly.")
+    stop("Python file 'py_functions.py' not found.")
   }
+
+  # 加载 Python 文件
   reticulate::source_python(python_file)
 }
-
-
-
-
-utils::globalVariables(c(
-  "ComputePostmeanHnew.exact", "K", "Vinv", "est",
-  "variable", "variable1", "variable2", "z1", "."
-))
