@@ -7,14 +7,9 @@
   }
   library(reticulate)
   # 2. 检查 Python 是否已安装
-  python_installed <- tryCatch({
-    reticulate::py_config()
-    TRUE
-  }, error = function(e) {
-    FALSE
-  })
 
-  if (!python_installed) {
+
+  if (!reticulate::py_available(initialize = FALSE)) {
     message("Python is not installed or not detected.")
 
     # 尝试通过 Miniconda 安装 Python
@@ -31,7 +26,9 @@
   }
 
   # 3. 声明 Python 依赖（只执行一次，后续会话重用同一环境）
-  reticulate::py_require(c("numpy", "mpmath", "pandas", "scipy"))
+  reticulate::py_require(
+    packages = c("numpy", "mpmath", "pandas", "scipy")
+  )
 
   # 4. 延迟加载（delay_load）Python 模块，防止在 onLoad 时马上初始化 Python
   numpy  <<- reticulate::import("numpy",  delay_load = TRUE)
