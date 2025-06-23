@@ -140,10 +140,10 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
   py <- get_py()
   if (w == F){
     id_ini = sample(unique(R_uni$id), nd)-1
-    return(sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
+    return(py$sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
   } else {
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
-    return(sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
+    return(py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
   }
 
 

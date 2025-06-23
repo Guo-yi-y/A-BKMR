@@ -40,17 +40,17 @@ a_makeVcomps <- function(X =X, r, lambda, Z, data.comps) {
     nall <- n0 + n1
 
 
-    K1 <- exp_neg_mat(makeKpart(r, data.comps$knots))
-    K10 <- exp_neg_mat(makeKpart(r, data.comps$knots, Z))
+    K1 <- py$exp_neg_mat(makeKpart(r, data.comps$knots))
+    K10 <- py$exp_neg_mat(makeKpart(r, data.comps$knots, Z))
     Q <- K1 + diag(nugget, n1, n1)
-    R <- Q + lambda[1]*tcrossprod_py(K10)
+    R <- Q + lambda[1]*py$tcrossprod_py(K10)
 
     cholQ <- chol(Q)
     cholR <- chol(R)
     Qinv <- chol2inv(cholQ)
     Rinv <- chol2inv(cholR)
 
-    XVinv = comp_XVinv(X, lambda[1], K10, Rinv)
+    XVinv = py$comp_XVinv(X, lambda[1], K10, Rinv)
     logdetVinv <- 2*sum(log(diag(cholQ))) - 2*sum(log(diag(cholR)))
     Vcomps <- list(lambda = lambda[1], XVinv = XVinv, logdetVinv = logdetVinv, cholR = cholR, Q = Q, K10 = K10, Qinv = Qinv, Rinv = Rinv)
   }
@@ -82,15 +82,15 @@ makeVcomps <- function(r, lambda, Z, data.comps) {
     # K0 <- Kall[1:n0, 1:n0 ,drop=FALSE]
     # K1 <- Kall[(n0+1):nall, (n0+1):nall ,drop=FALSE]
     # K10 <- Kall[(n0+1):nall, 1:n0 ,drop=FALSE]
-    K1 <- exp_neg_mat(makeKpart(r, data.comps$knots))
-    K10 <- exp_neg_mat(makeKpart(r, data.comps$knots, Z))
+    K1 <- py$exp_neg_mat(makeKpart(r, data.comps$knots))
+    K10 <- py$exp_neg_mat(makeKpart(r, data.comps$knots, Z))
     Q <- K1 + diag(nugget, n1, n1)
-    R <- Q + lambda[1]*tcrossprod_py(K10)
+    R <- Q + lambda[1]*py$tcrossprod_py(K10)
     cholQ <- chol(Q)
     cholR <- chol(R)
     Qinv <- chol2inv(cholQ)
     Rinv <- chol2inv(cholR)
-    Vinv <- diag(1, n0, n0) - compute_Vinv(lambda[1], K10, Rinv)
+    Vinv <- diag(1, n0, n0) - py$compute_Vinv(lambda[1], K10, Rinv)
     logdetVinv <- 2*sum(log(diag(cholQ))) - 2*sum(log(diag(cholR)))
     Vcomps <- list(Vinv = Vinv, logdetVinv = logdetVinv, cholR = cholR, Q = Q, K10 = K10, Qinv = Qinv, Rinv = Rinv)
   }
@@ -111,7 +111,7 @@ a_sigsq.eps.update <- function(y, X, beta, Vcomps, a.eps=1e-3, b.eps=1e-3) {
   py <- get_py()
   mu <- y - X%*%beta
 
-  muVinv = compute_muVinv(mu, Vcomps$lambda, Vcomps$K10, Vcomps$Rinv)
+  muVinv = py$compute_muVinv(mu, Vcomps$lambda, Vcomps$K10, Vcomps$Rinv)
 
 
   #set.seed(s)
@@ -450,8 +450,8 @@ a_MHstep <- function( r, lambda, lambda.star, r.star, delta, delta.star, y, X, Z
   ## compute log M-H ratio
   Vcomps.star <- a_makeVcomps(X, r.star, lambda.star, Z, data.comps)
   mu <- y - X%*%beta
-  stainv1 = compute_stainv(mu, Vcomps.star$lambda, Vcomps.star$K10, Vcomps.star$Rinv)
-  stainv2 = compute_stainv(mu, Vcomps$lambda, Vcomps$K10, Vcomps$Rinv)
+  stainv1 = py$compute_stainv(mu, Vcomps.star$lambda, Vcomps.star$K10, Vcomps.star$Rinv)
+  stainv2 = py$compute_stainv(mu, Vcomps$lambda, Vcomps$K10, Vcomps$Rinv)
   diffliks <- 1/2*Vcomps.star$logdetVinv - 1/2*Vcomps$logdetVinv - 1/2/sigsq.eps*(stainv1 - stainv2 )%*%mu
   logMHratio <- diffliks + diffpriors + negdifflogproposal
   logalpha <- min(0,logMHratio)
@@ -475,7 +475,7 @@ h.update <- function(lambda, Vcomps, sigsq.eps, y, X, beta, r, Z, data.comps) {
   }
   if(is.null(Vcomps$Q)) {
     Kpart <- makeKpart(r, Z)
-    K <- exp_neg_mat(Kpart)
+    K <- py$exp_neg_mat(Kpart)
     Vinv <- Vcomps$Vinv
     lambda <- lambda[1] ## in case with random intercept (randint==TRUE), where lambda is 2-dimensional
     lamKVinv <- lambda*K%*%Vinv
@@ -536,7 +536,7 @@ newh.update <- function(Z, Znew, Vcomps, lambda, sigsq.eps, r, y, X, beta, data.
     # Kmat0 <- Kmat[1:n0,1:n0 ,drop=FALSE]
     # Kmat1 <- Kmat[(n0+1):nall,(n0+1):nall ,drop=FALSE]
     # Kmat10 <- Kmat[(n0+1):nall,1:n0 ,drop=FALSE]
-    Kmat10 <- exp_neg_mat(makeKpart(r, Znew, data.comps$knots))
+    Kmat10 <- py$exp_neg_mat(makeKpart(r, Znew, data.comps$knots))
 
     if(is.null(Vcomps)) {
       Vcomps <- makeVcomps(r = r, lambda = lambda, Z = Z, data.comps = data.comps)
