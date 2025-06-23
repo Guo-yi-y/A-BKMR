@@ -137,6 +137,7 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
   R_uni = data.frame(R_ic) %>% group_by(across(everything())) %>%
     summarise(count = n(), .groups = 'drop') %>% ungroup() %>% arrange(id)
 
+  py <- .py_env$mod
   if (w == F){
     id_ini = sample(unique(R_uni$id), nd)-1
     return(py$sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
