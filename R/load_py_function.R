@@ -9,18 +9,11 @@
   # 2. 检查 Python 是否已安装
 
 
-  if (!reticulate::py_available(initialize = FALSE)) {
+  if (is.null(py_discover_config())) {
     message("Python is not installed or not detected.")
 
-    # 尝试通过 Miniconda 安装 Python
-    message("Attempting to install Python using reticulate::install_python()...")
-    tryCatch({
-      reticulate::install_python()
-      message("Python has been successfully installed.")
-    }, error = function(e) {
-      message("Failed to install Python. Please install Python manually.")
-      message("You can install Python via: https://www.python.org/downloads/")
-    })
+    message("Attempting to install Python using reticulate::py_require")
+
   } else {
     message("Python is installed. Proceeding with the package load...")
   }
