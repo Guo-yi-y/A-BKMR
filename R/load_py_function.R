@@ -23,13 +23,9 @@
     packages = c("numpy", "mpmath", "pandas", "scipy")
   )
 
-  # 4. 延迟加载（delay_load）Python 模块，防止在 onLoad 时马上初始化 Python
-  numpy  <<- reticulate::import("numpy",  delay_load = TRUE)
-  mpmath <<- reticulate::import("mpmath", delay_load = TRUE)
-  pandas <<- reticulate::import("pandas", delay_load = TRUE)
-  scipy  <<- reticulate::import("scipy",  delay_load = TRUE)
 
-  # 5. 加载 Python 文件
+
+  # 4. 加载 Python 文件
   python_file <- system.file("python", "py_functions.py", package = pkgname)
   if (python_file == "") {
     stop("Python file 'py_functions.py' not found.")
