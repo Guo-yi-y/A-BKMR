@@ -10,7 +10,7 @@
 
   # 2. 声明 Python 依赖（只执行一次，后续会话重用同一环境）
   reticulate::py_require(
-    packages = c("numpy", "mpmath", "pandas", "scipy")
+    packages = c("numpy", "pandas", "scipy")
   )
 
 
