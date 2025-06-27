@@ -22,7 +22,15 @@ A-BKMR is used to perform advanced BKMR in extremely fast speed. Additionally, y
 
 ## Installation
 
-You can install the development version of pairWQS from [GitHub](https://github.com/) with:
+Attention!
+The core of A-BKMR is written in **Python**, so Please ensure that the R package "reticulate" (≥1.41) is installed and that you are running R version 4.4.3 or later.
+
+We strongly recommend user install python and python packages "numpy", "numba", "scipy".➡️ [click to view deatiled installation instruction](docs/python-install.md)
+
+However, if you don't want to install python, we also provide a virtual python installation in pairWQS. You can directly devtools::install_github("Guo-yi-y/pairWQS"), then a virtual python will be automatically installed on your computer.
+
+
+You can install the development version of A-BKMR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
