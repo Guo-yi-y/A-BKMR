@@ -64,25 +64,25 @@ ggplot()+
     exposures. For example, all exposures increase simultaneously
 
 ``` r
-
+quants = seq(0.25, 0.75, 0.01)
 newz = lapply(1:ncol(dat$Z), function(i){
-      qf = data.frame(X = quantile(dat$Z[, i], quants))
-      names(qf) = names(data.frame(dat$Z))[i]
-      return(qf)
-    }) %>% bind_cols()
+  qf = data.frame(X = quantile(dat$Z[, i], quants))
+  names(qf) = names(data.frame(dat$Z))[i]
+  return(qf)
+}) %>% bind_cols()
 
 overall_res = a_OverallRiskSummaries_vary(km, newz = newz, data.comps = km$data.comps)
 overall_res$risk_overall$quants = seq(0.25, 0.75, 0.01)
 
-je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = seq(0.25, 0.75, 0.01)*10)
+# By multiplying quants by 100, the estimated JE represents the change in outcome per 1% increase
+je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = quants*100)
 
 ggplot()+
   geom_hline(yintercept = 0, linetype = 2, color = "red")+
   geom_pointrange(data = overall_res$risk_overall, 
                   aes(quants, est_p, ymin = est_p - 1.96*sd_p, ymax = est_p + 1.96*sd_p), 
                   color = '#48C5B9', 
-                  shape = 16, 
-                  position = position_nudge(x = -0.01, y = 0), 
+                  shape = 16
   )+
   annotate("text", x = 0.5, y = 0.4, size = 4,
            label = glue("Joint effect = {sprintf('%.3f', je_res$est)} ({sprintf('%.3f', je_res$lower_quant)}, {sprintf('%.3f', je_res$upper_quant)})") ) + 
@@ -102,15 +102,14 @@ newz = data.frame(z1 = quantile(dat$Z[, 1], seq(0.25, 0.75, 0.01)), z2 = quantil
 overall_res = a_OverallRiskSummaries_vary(km, newz = newz, data.comps = km$data.comps)
 overall_res$risk_overall$quants = seq(0.25, 0.75, 0.01)
 
-je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = seq(0.25, 0.75, 0.01)*10)
+je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = seq(0.25, 0.75, 0.01)*100)
 
 ggplot()+
   geom_hline(yintercept = 0, linetype = 2, color = "red")+
   geom_pointrange(data = overall_res$risk_overall, 
                   aes(quants, est_p, ymin = est_p - 1.96*sd_p, ymax = est_p + 1.96*sd_p), 
                   color = '#48C5B9', 
-                  shape = 16, 
-                  position = position_nudge(x = -0.01, y = 0), 
+                  shape = 16 
   )+
   annotate("text", x = 0.5, y = 0.4, size = 4,
            label = glue("Joint effect = {sprintf('%.3f', je_res$est)} ({sprintf('%.3f', je_res$lower_quant)}, {sprintf('%.3f', je_res$upper_quant)})") ) + 
@@ -126,23 +125,22 @@ ggplot()+
 ``` r
 
 newz = lapply(1:ncol(dat$Z), function(i){
-      qf = data.frame(X = quantile(dat$Z[, i], quants))
-      names(qf) = names(data.frame(dat$Z))[i]
-      return(qf)
-    }) %>% bind_cols()
+  qf = data.frame(X = quantile(dat$Z[, i], quants))
+  names(qf) = names(data.frame(dat$Z))[i]
+  return(qf)
+}) %>% bind_cols()
 
 overall_res = a_OverallRiskSummaries_vary(km, newz = newz, data.comps = km$data.comps, point1 = data.frame(z1 = 1, z2 = 0.5, z3 = 0.1, z4 = 0, z5 = 0))
 overall_res$risk_overall$quants = seq(0.25, 0.75, 0.01)
 
-je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = seq(0.25, 0.75, 0.01)*10)
+je_res = com_je(overall_res$preds_e$postmean, overall_res$preds_e$postvar, X = seq(0.25, 0.75, 0.01)*100)
 
 ggplot()+
   geom_hline(yintercept = 0, linetype = 2, color = "red")+
   geom_pointrange(data = overall_res$risk_overall, 
                   aes(quants, est_p, ymin = est_p - 1.96*sd_p, ymax = est_p + 1.96*sd_p), 
                   color = '#48C5B9', 
-                  shape = 16, 
-                  position = position_nudge(x = -0.01, y = 0), 
+                  shape = 16 
   )+
   annotate("text", x = 0.5, y = 0.4, size = 4,
            label = glue("Joint effect = {sprintf('%.3f', je_res$est)} ({sprintf('%.3f', je_res$lower_quant)}, {sprintf('%.3f', je_res$upper_quant)})") ) + 
@@ -155,18 +153,21 @@ ggplot()+
 
 ``` r
 
-singlevar_res = a_SingVarRiskSummaries(fit, y = NULL, Z = NULL, X = NULL, quants = seq(0.25, 0.75, 0.01), method = "approx", sel = NULL, 
-                                       data.comps, point1 = NULL) 
+singlevar_res = a_PredictorResponseUnivar(km, quants = seq(0, 1, 0.1), method = "approx", data.comps = km$data.comps) 
 
 singlevar_data = lapply(1:length(singlevar_res), function(i){
-  return(  singlevar_res[[i]]$risk_overall  ) }) %>% bind_rows()
+  
+  df = singlevar_res[[i]]$risk_overall %>% 
+    mutate(var_est = glue("{vars} [{sprintf('%.3f', singlevar_res[[i]]$est$est)} ({sprintf('%.3f', singlevar_res[[i]]$est$lower_quant)}, {sprintf('%.3f', singlevar_res[[i]]$est$upper_quant)}) ]"))
+  return(df) 
+}) %>% bind_rows() 
 
 ggplot()+
   geom_smooth(data = singlevar_data, 
               aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se), 
               color = '#48C5B9', 
               stat = "identity")+
-  facet_wrap(~ vars)+
+  facet_wrap(~ var_est)+
   xlab("Exposures")+
   ylab("Outcomes")
 ```
@@ -231,7 +232,9 @@ ggplot(multi_2inter, aes(variable, est_p, ymin = est_p - 1.96*sd_p,
                                                    parse = TRUE) 
 ```
 
-Reference Yi Guo, Huixun Jia, Ziwei Peng, Xinming Xu, Zhicheng Zhang,
-Keyu Pan, Yuqin Zhou, Haidong Kan, Zhenyu Wu, Cong Liu. Advanced
-Bayesian Kernel Machine Regression for Large-Scale Exposome Studies:
-Making the Impossible Possible.
+\##Reference
+
+Yi Guo, Huixun Jia, Ziwei Peng, Xinming Xu, Zhicheng Zhang, Keyu Pan,
+Yuqin Zhou, Haidong Kan, Zhenyu Wu, Cong Liu. Advanced Bayesian Kernel
+Machine Regression for Large-Scale Exposome Studies: Making the
+Impossible Possible.
