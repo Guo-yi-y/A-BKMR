@@ -9,7 +9,7 @@ a_PredictorResponseUnivar(
   y = NULL,
   Z = NULL,
   X = NULL,
-  quants = seq(0.25, 0.75, 0.01),
+  quants = seq(0.25, 0.75, 0.1),
   method = "approx",
   sel = NULL,
   data.comps,

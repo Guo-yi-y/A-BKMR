@@ -595,25 +595,17 @@ a_kmbayes = function (y, Z, X = NULL, iter = 1000, family = "gaussian", id = NUL
 #'   }
 #' @export
 
-a_OverallRiskSummaries_vary <- function(
-    fit,
-    y = NULL,
-    Z = NULL,
-    X = NULL,
-    newz = NULL,
-    method = "approx",
-    sel = NULL,
-    data.comps,
-    point1 = NULL
-) {
-  # If fit is a bkmrfit object, extract y, Z, and X if not provided
+a_OverallRiskSummaries_vary = function (fit, y = NULL, Z = NULL, X = NULL, newz = NULL, method = "approx",
+                                        sel = NULL, data.comps, point1 = NULL)
+{
   if (inherits(fit, "bkmrfit")) {
-    if (is.null(y))   y <- fit$y
-    if (is.null(Z))   Z <- fit$Z
-    if (is.null(X))   X <- fit$X
+    if (is.null(y))
+      y <- fit$y
+    if (is.null(Z))
+      Z <- fit$Z
+    if (is.null(X))
+      X <- fit$X
   }
-
-  # Generate default grid of quantiles from 25% to 75% in 1% increments
   if (is.null(newz)) {
     quants <- seq(0.25, 0.75, 0.01)
     newz <- lapply(seq_len(ncol(Z)), function(i) {
@@ -622,63 +614,52 @@ a_OverallRiskSummaries_vary <- function(
       df
     }) %>% bind_cols()
   }
-
-  # Default reference point is the median of each exposure
   if (is.null(point1)) {
-    point1 <- data.frame(t(colMedians(Z, na.rm = TRUE)))
+    point1 <- data.frame(t(apply(Z, 2, median, na.rm = TRUE)))
   }
   colnames(newz) <- colnames(Z)
-
-  # Find if reference scenario is already in newz
   hits <- which(apply(newz, 1, function(row) all(row == point1)))
-
-  # If not, prepend reference scenario to the grid
   if (length(hits) == 0) {
     newz <- rbind(point1, newz)
     which_ref <- 1L
-  } else {
+  }
+  else {
     which_ref <- hits[1]
   }
-
-  # Compute posterior mean and variance for h(newz)
-  preds <- aBKMR:::a_ComputePostmeanHnew(
-    fit = fit, y = y, Z = Z, X = X,
-    Znew = newz, sel = sel,
-    method = method, data.comps = data.comps
-  )
-
+  preds <- aBKMR:::a_ComputePostmeanHnew(fit = fit, y = y,
+                                         Z = Z, X = X, Znew = newz, sel = sel, method = method,
+                                         data.comps = data.comps)
   n <- nrow(newz)
-  # Create contrast matrix to compute differences from reference
   C <- diag(n)
   C[, which_ref] <- C[, which_ref] - 1
-
-  # Compute differences and their variance
   diff_vals <- as.vector(C %*% preds$postmean)
   Sigma_diff <- C %*% preds$postvar %*% t(C)
-
-  # Prepare output risk_overall without the reference row
-  if (which_ref == 1) {
+  if (length(hits) == 0) {
     risk <- newz[-1, , drop = FALSE]
     risk$est_p <- diff_vals[-1]
-    risk$sd_p  <- sqrt(diag(Sigma_diff))[-1]
+    risk$sd_p <- sqrt(diag(Sigma_diff))[-1]
     risk$est_e <- preds$postmean[-1]
-    risk$sd_e  <- sqrt(diag(preds$postvar))[-1]
-  } else {
+    risk$sd_e <- sqrt(diag(preds$postvar))[-1]
+
+    res = list(preds_e = list(postmean = preds$postmean[-which_ref],
+                              postvar = preds$postvar[-which_ref, -which_ref]), preds_p = list(postmean = diff_vals[-which_ref],
+                                                                                               postvar = Sigma_diff[-which_ref, -which_ref]), risk_overall = risk)
+
+  }
+  else {
     risk <- newz
     risk$est_p <- diff_vals
-    risk$sd_p  <- sqrt(diag(Sigma_diff))
+    risk$sd_p <- sqrt(diag(Sigma_diff))
     risk$est_e <- preds$postmean
-    risk$sd_e  <- sqrt(diag(preds$postvar))
+    risk$sd_e <- sqrt(diag(preds$postvar))
+    res = list(preds_e = list(postmean = preds$postmean,
+                              postvar = preds$postvar), preds_p = list(postmean = diff_vals,
+                                                                       postvar = Sigma_diff), risk_overall = risk)
+
   }
 
-  # Return list of posterior summaries and summary data frame
-  list(
-    preds_e = list(postmean = preds$postmean[-which_ref],
-                   postvar  = preds$postvar[-which_ref, -which_ref]),
-    preds_p = list(postmean = diff_vals[-which_ref],
-                   postvar  = Sigma_diff[-which_ref, -which_ref]),
-    risk_overall = risk
-  )
+  return(res)
+
 }
 
 
@@ -754,9 +735,9 @@ a_SingVarRiskSummaries = function (fit, y = NULL, Z = NULL, X = NULL, data.comps
 #' @export
 
 
-a_PredictorResponseUnivar = function (fit, y = NULL, Z = NULL, X = NULL, quants = seq(0.25, 0.75, 0.01), method = "approx", sel = NULL,
-                                   data.comps, point1 = NULL) {
-
+a_PredictorResponseUnivar = function (fit, y = NULL, Z = NULL, X = NULL, quants = seq(0.25,
+                                                                                      0.75, 0.1), method = "approx", sel = NULL, data.comps, point1 = NULL)
+{
   if (inherits(fit, "bkmrfit")) {
     if (is.null(y))
       y <- fit$y
@@ -765,28 +746,26 @@ a_PredictorResponseUnivar = function (fit, y = NULL, Z = NULL, X = NULL, quants 
     if (is.null(X))
       X <- fit$X
   }
-
-  if(is.null(point1)){
+  if (is.null(point1)) {
     point1 = apply(Z, 2, median, na.rm = TRUE)
   }
-
-  newz_temp = lapply(1:length(quants), function(i) point1) %>% bind_rows()
-
-
-  s_res = lapply(1:length_z, function(i){
+  newz_temp = lapply(1:length(quants), function(i) point1) %>%
+    bind_rows()
+  s_res = lapply(1:ncol(Z), function(i) {
     newz = newz_temp
-    newz[,i] = quantile(Z[, i], quants, na.rm = T)
-    res = a_OverallRiskSummaries_vary(fit, y = NULL, Z = NULL, X = NULL, newz = newz , method = "approx", sel = NULL, data.comps, point1 = point1)
-    res$est = com_je(postmean = res$preds_p$postmean, postvar = res$preds_p$postvar, X = quants*10, B = 1000)
+    newz[, i] = quantile(Z[, i], quants, na.rm = T)
+    res = a_OverallRiskSummaries_vary(fit, y = NULL, Z = NULL,
+                                      X = NULL, newz = newz, method = "approx", sel = NULL,
+                                      data.comps, point1 = point1)
+    res$est = com_je(postmean = res$preds_p$postmean, postvar = res$preds_p$postvar,
+                     X = quants*100, B = 1000)
     res$risk_overall$quants = quants
-
-    res$risk_overall = res$risk_overall[, c("quants", glue("z{i}"), "est_p", "sd_p")]
+    res$risk_overall = res$risk_overall[, c("quants", names(data.frame(Z))[i],
+                                            "est_p", "sd_p")]
     names(res$risk_overall) = c("quants", "z", "est", "se")
     res$risk_overall$vars = names(data.frame(Z))[i]
-
     return(res)
   })
-
 }
 
 

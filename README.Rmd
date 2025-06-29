@@ -231,5 +231,6 @@ ggplot(multi_2inter, aes(variable, est_p, ymin = est_p - 1.96*sd_p,
 
 
 
-Reference
+##Reference
+
 Yi Guo, Huixun Jia, Ziwei Peng, Xinming Xu, Zhicheng Zhang, Keyu Pan, Yuqin Zhou, Haidong Kan, Zhenyu Wu, Cong Liu. Advanced Bayesian Kernel Machine Regression for Large-Scale Exposome Studies: Making the Impossible Possible.
