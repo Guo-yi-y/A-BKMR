@@ -45,6 +45,9 @@ This is a basic example which shows you how use A-BKMR:
 library(aBKMR)
 library(bkmr)
 library(ggplot2)
+library(dplyr)
+library(glue)
+library(ggtext)
 
 dat <- sim_data(n = 500, M = 5, ind=1:3, Zgen="realistic", family = "gaussian"    )
 
