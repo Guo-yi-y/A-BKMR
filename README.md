@@ -96,7 +96,7 @@ ggplot()+
 
 2.  You can also choose to plot the exposure-response curve with some
     exposure increase but other decrease and estimate the joint effect
-    in this scenarios.
+    in this scenario.
 
 ``` r
 
@@ -123,7 +123,7 @@ ggplot()+
 
 3.  You can also choose to plot the exposure-response curve with all
     exposure increase and fixed the reference point at a specified point
-    such as standard level fo exposures.
+    such as standard level of exposures.
 
 ``` r
 
@@ -175,7 +175,7 @@ ggplot()+
   ylab("Outcomes")
 ```
 
-4.  Interaction effect
+5.  Interaction effect
 
 ``` r
 
