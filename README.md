@@ -17,7 +17,7 @@ running R version 4.4.3 or later.
 
 We strongly recommend user install python and python packages “numpy”,
 “numba”, “scipy”.➡️ [click to view deatiled installation
-instruction](docs/python-install.md)
+instruction](inst/docs/python-install.md)
 
 However, if you don’t want to install python, we also provide a virtual
 python installation in pairWQS. You can directly

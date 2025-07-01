@@ -11,6 +11,8 @@ com_je(postmean, postvar, X, B = 1000)
 
 \item{postvar}{variance-covariance matrix of predicted y}
 
+\item{X}{a numeric vector or matrix of predictor variable(s) on which yhat is regressed}
+
 \item{B}{the number of bootstrap. By default, it is 1000}
 }
 \description{

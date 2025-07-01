@@ -5,7 +5,6 @@
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     stop("Please install the reticulate package first.")
   }
-  library(reticulate)
 
 
   # 2. 声明 Python 依赖（只执行一次，后续会话重用同一环境）
