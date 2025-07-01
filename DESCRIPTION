@@ -1,11 +1,13 @@
 Package: aBKMR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Advanced Bayesian Kernel Machine Regression  for Large-Scale Exposome Studies
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Yi Guo
+Maintainer: Yi Guo <yguo24@m.fudan.edu.cn>
+Description: Provides an implementation of Advanced Bayesian Kernel Machine Regression
+    for large-scale exposome data. It dramatically reduces both computation time and memory usage. The package also offers functions for
+    visualizing univariate, bivariate, and multivariate exposure
+    response surfaces in R..
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
