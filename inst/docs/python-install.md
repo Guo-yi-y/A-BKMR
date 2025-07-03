@@ -32,7 +32,7 @@ line like the following (replacing the path with the one you copied):
 ## 3. Install python packages from R
 
     library(reticulate)
-    py_install(c("numpy", "scipy", "numba"), pip = TRUE)
+    py_install(c("numpy", "scipy", "pandas"), pip = TRUE)
 
-Running these commands installs NumPy, SciPy, and Numba into the Python
+Running these commands installs numPy, sciPy, and pandas into the Python
 interpreter that R now recognizes.

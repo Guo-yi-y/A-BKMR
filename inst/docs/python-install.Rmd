@@ -28,6 +28,6 @@ This code will open .Renviron. In the .Renviron file that opens, paste a line li
 ## 3. Install python packages from R
 ``` r
 library(reticulate)
-py_install(c("numpy", "scipy", "numba"), pip = TRUE)
+py_install(c("numpy", "scipy", "pandas"), pip = TRUE)
 ```
-Running these commands installs NumPy, SciPy, and Numba into the Python interpreter that R now recognizes.
+Running these commands installs numPy, sciPy, and pandas into the Python interpreter that R now recognizes.
