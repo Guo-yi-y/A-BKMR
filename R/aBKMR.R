@@ -3,6 +3,14 @@
 #' This packages achieves acceleration of BKMR and provide quantitative estimates
 #' It includes three parts: weighted sampling, approximate gaussian process, and quantization
 
+#' @import dplyr
+#' @import magrittr
+#' @import fields
+#' @import bkmr
+#' @import statmod
+#' @import glue
+#' @import reticulate
+#' @importFrom MASS mvrnorm
 
 
 
