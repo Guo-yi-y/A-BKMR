@@ -20,8 +20,8 @@ We strongly recommend user install python and python packages “numpy”,
 instruction](inst/docs/python-install.md)
 
 However, if you don’t want to install python, we also provide a virtual
-python installation in pairWQS. You can directly
-devtools::install_github(“Guo-yi-y/pairWQS”), then a virtual python will
+python installation in A-BKMR. You can directly
+devtools::install_github(“Guo-yi-y/A-BKMR”), then a virtual python will
 be automatically installed on your computer.
 
 You can install the development version of A-BKMR from
