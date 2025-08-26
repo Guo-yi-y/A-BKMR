@@ -22,20 +22,24 @@ A-BKMR is used to perform advanced BKMR in extremely fast speed. Additionally, y
 
 ## Installation
 
-Attention!
-The core of A-BKMR is written in **Python**, so Please ensure that the R package "reticulate" (≥1.41) is installed and that you are running R version 4.4.3 or later.
-
-We strongly recommend user install python and python packages "numpy", "numba", "scipy".➡️ [click to view deatiled installation instruction](inst/docs/python-install.md)
-
-However, if you don't want to install python, we also provide a virtual python installation in A-BKMR. You can directly devtools::install_github("Guo-yi-y/A-BKMR"), then a virtual python will be automatically installed on your computer.
-
-
-You can install the development version of A-BKMR from [GitHub](https://github.com/) with:
+Attention! The core of A-BKMR is written in Python. Please ensure that the R package "reticulate" (≥1.41) is installed and that you are using R version 4.4.3 or later. 
+Python is required for installing and running A-BKMR. To simplify the installation process for users, we have integrated the Python download procedure within R. 
+You can install A-BKMR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("Guo-yi-y/A-BKMR")
 ```
+
+However, this method can occasionally be unstable and may lead to "timeout" errors due to issues with downloading the virtual Python version. If you encounter the "timeout" error, we recommend trying again at a different time, as the virtual Python version can be intermittently unstable.
+If the issue persists, please check your internet connection and ensure that the link https://astral.sh/uv/install.ps1 is accessible. 
+If the link cannot be opened, switching to a different network (e.g., using a VPN or another internet connection) is the quickest solution.
+
+If you still cannot install, an alternative solution was to install Python manually➡️ [click to view deatiled mannual installation instruction](inst/docs/python-install.md)
+
+
+
+
 
 ## Example
 
