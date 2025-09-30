@@ -70,7 +70,7 @@ dat <- sim_data(n = 500, M = 5, ind=1:3, Zgen="realistic", family = "gaussian")
 # Increasing nd or num_nn will slow down the sam_py_y() function.
 # W: Logical flag indicating whether to apply weights.
 # Set W = TRUE if R contains duplicate exposure observations. 
-k_id = sam_py_r(R = dat$Z , nd = 20, num_nn = 20, w = F)
+k_id = sam_py_r(R = dat$Z , nd = 50, num_nn = 50, w = F)
 # Make sure est.h = T
 km = a_kmbayes(y = dat$y, Z = dat$Z, X = dat$X, knots = dat$Z[k_id,], est.h = T, varsel = T, iter = 10000, family = "gaussian")
 # if X included categorical variables, you can turn it into dummy variables, 
