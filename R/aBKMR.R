@@ -126,14 +126,14 @@ sim_data = function (n = 100, M = 5, sigsq.true = 0.5, hfun = 3, beta.true = 2,
 
 # weighted sampling ------------------------------------------------------------
 
-#' used for knot sampling
-#' @param R exposures
-#' @param nd number of the representative observations
-#' @param num_nn number of nearest neighbor
-#' @param P computation parameter
-#' @param Q computation parameter
-#' @param w whether the weight is used
-#' @param max_loop max number of loop finding knots
+#' This function performs knot sampling. It selects a set of representative observations (knots) from a discrete candidate set by minimizing a geometric space-filling criterion. The knots are identified through an iterative procedure that repeatedly assigns each observation to its closest point and updates the representative set.
+#' @param R An exposure matrix where each row corresponds to an observation.
+#' @param nd The number of representative observations(knots) to select from the exposure matrix. Larger nd yield more accurate estimates but increase the computational cost of a_kmbayes.
+#' @param num_nn The number of nearest neighbors to search for each candidate point. For example, setting num_nn = 100 means that sam_py_r will evaluate the 100 closest points around each candidate when selecting representative observations.
+#' @param P The "p" exponent of the coverage criterion. It affects how the distance from a point x to a set of design points D is calculated. P=1 gives average distance. P=-1 gives harmonic mean distance. P=-Inf would give minimum distance (not available as a value). As P gets large and negative, points will tend to be more spread out.
+#' @param Q The "q" exponent of the coverage criterion.It affects how distances from all points not in the design to points in the design are averaged. When Q=1, simple averaging of the distances is employed. Q=Inf (not available as a value) in combination with P=-Inf would give a classical minimax design.
+#' @param w Whether the weight is used; Default is FALSE, but it should be TRUE if there are duplicated observations with same exposures in the exposure matrix.
+#' @param max_loop Max number of loop finding knots
 #' @export
 
 
