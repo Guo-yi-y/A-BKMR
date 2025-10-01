@@ -43,15 +43,16 @@ Below is a simple example demonstrating how to use A-BKMR. We first
 simulate a dataset of 500 observations, including five exposures, three
 covariates, and a continuous outcome. We then fit the BKMR model using
 the function “a_kmbayes”. Please note that users should generate knot
-locations with the function ‘sam_py_r’ before fitting A-BKMR. This
+positions with the function ‘sam_py_r’ before fitting A-BKMR. This
 differs from function ‘kmbayes’, which generates knots internally. When
 using function ‘sam_py_r’, you may optionally enable weighted knot
-sampling by setting ‘w = TRUE’, and you can also adjust the tuning
-parameters of weighted knot sampling. Larger values of nd yield more
-accurate estimates but also increase the computational cost of
+sampling by setting ‘w = TRUE’ if your dataset contains duplicate
+observations with identical exposures, and you can also adjust the
+tuning parameters of weighted knot sampling. Larger values of nd yield
+more accurate estimates but also increase the computational cost of
 a_kmbayes. In practice, setting nd between 50 and 150 is sufficient for
 most epidemiological studies, and a maximum num_nn of 100 is typically
-adequate
+adequate.
 
 ``` r
 library(aBKMR)
