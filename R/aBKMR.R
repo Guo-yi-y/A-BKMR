@@ -137,26 +137,35 @@ sim_data = function (n = 100, M = 5, sigsq.true = 0.5, hfun = 3, beta.true = 2,
 #' @export
 
 
-sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
-  nd = as.integer(nd)
+sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = FALSE){
+  nd     = as.integer(nd)
   num_nn = as.integer(num_nn)
 
-  R_ic <- data.frame(R) %>%
-    mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.)))))
+  Rdf <- as.data.frame(R)
 
 
-  R_uni = data.frame(R_ic) %>% group_by(across(everything())) %>%
-    summarise(count = n(), .groups = 'drop') %>% ungroup() %>% arrange(id)
+  first_idx <- which(!duplicated(do.call(paste, c(Rdf, sep = "\r"))))
 
-  if (w == F){
-    id_ini = sample(unique(R_uni$id), nd)-1
-    return(py$sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
+
+  rep_idx <- match(do.call(paste, c(Rdf, sep = "\r")),
+                   do.call(paste, c(Rdf[first_idx, , drop=FALSE], sep = "\r")))
+
+
+  if (!w) {
+
+    id_ini_0based <- sample(first_idx, nd) - 1L
+    return(py$sam_py(R, nd, as.integer(id_ini_0based), num_nn,
+                     P=as.integer(P), Q=as.integer(Q), max_loop=as.integer(max_loop)))
   } else {
-    id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
-    return(py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
+
+    tab <- table(rep_idx)
+    uniq_pos <- as.integer(names(tab))
+    weights  <- as.numeric(tab) / sum(tab)
+    chosen_pos <- sample(uniq_pos, nd, replace = FALSE, prob = weights)
+    id_ini_0based <- first_idx[chosen_pos] - 1L
+    return(py$sam_py_w(R, nd, as.integer(id_ini_0based), num_nn,
+                       P=as.integer(P), Q=as.integer(Q), max_loop=as.integer(max_loop)))
   }
-
-
 }
 
 # model fit ---------------------------------------------------------------
