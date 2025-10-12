@@ -155,17 +155,21 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
     uni_id = py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20)
 
-    key <- do.call(paste, c(lapply(R, function(x) ifelse(is.na(x), "<NA>", x)), sep = "\r"))
+    R2 <- R %>%
+      group_by(across(everything())) %>%
+      mutate(uni_row = cur_group_id()) %>%
+      ungroup()
 
-    rep_idx <- match(key, unique(key))
+    idx_map <- R2 %>%
+      group_by(uni_row) %>%
+      summarise(orig_idx = list(row_number()), .groups = "drop")
 
-    first_row_by_class <- tapply(seq_len(nrow(R)), rep_idx, function(ix) ix[1]) |> as.integer()
-    orig_id_rep <- first_row_by_class[uni_id]
+    res <- idx_map %>% filter(uni_row %in% uni_id)
 
+    orig_idx_list <- res$orig_idx
+    orig_idx_vec <- unlist(orig_idx_list, use.names = FALSE)
 
-    orig_id_all <- which(rep_idx %in% uni_id)
-
-    return(orig_id_all)
+    return(orig_idx_vec)
   }
 
 
