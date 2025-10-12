@@ -142,7 +142,7 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
   num_nn = as.integer(num_nn)
 
   R_ic <- data.frame(R) %>%
-    mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.)))))
+    mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.))))) %>% mutate(row_id = row_number())
 
 
   R_uni = data.frame(R_ic) %>% group_by(across(everything())) %>%
@@ -155,21 +155,9 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
     uni_id = py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20)
 
-    R2 <- data.frame(R) %>%
-      group_by(across(everything())) %>%
-      mutate(uni_row = cur_group_id()) %>%
-      ungroup()
+    fin_mat = R_ic %>% filter(id%in%uni_id) %>% distinct(id, .keep_all = T)
 
-    idx_map <- R2 %>%
-      group_by(uni_row) %>%
-      summarise(orig_idx = list(row_number()), .groups = "drop")
-
-    res <- idx_map %>% filter(uni_row %in% uni_id)
-
-    orig_idx_list <- res$orig_idx
-    orig_idx_vec <- unlist(orig_idx_list, use.names = FALSE)
-
-    return(orig_idx_vec)
+    return(fin_mat$row_id)
   }
 
 
