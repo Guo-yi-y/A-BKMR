@@ -153,7 +153,19 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
     return(py$sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
   } else {
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
-    return(py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
+    uni_id = py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20)
+
+    key <- do.call(paste, c(lapply(R, function(x) ifelse(is.na(x), "<NA>", x)), sep = "\r"))
+
+    rep_idx <- match(key, unique(key))
+
+    first_row_by_class <- tapply(seq_len(nrow(R)), rep_idx, function(ix) ix[1]) |> as.integer()
+    orig_id_rep <- first_row_by_class[uni_id]
+
+
+    orig_id_all <- which(rep_idx %in% uni_id)
+
+    return(orig_id_all)
   }
 
 
