@@ -155,7 +155,7 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
     uni_id = py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20)
 
-    R2 <- R %>%
+    R2 <- data.frame(R) %>%
       group_by(across(everything())) %>%
       mutate(uni_row = cur_group_id()) %>%
       ungroup()
