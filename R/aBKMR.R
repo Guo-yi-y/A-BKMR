@@ -152,10 +152,16 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
     id_ini = sample(unique(R_uni$id), nd)-1
     return(py$sam_py(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20))
   } else {
+
+
     id_ini = sample(unique(R_uni$id), nd, prob = R_uni$count/sum(R_uni$count))-1
     uni_id = py$sam_py_w(R, nd, as.integer(id_ini), num_nn, P=-20, Q=20, max_loop=20)
 
-    fin_mat = R_ic %>% filter(id%in%uni_id) %>% distinct(id, .keep_all = T)
+    R_ic_id <- data.frame(R) %>%
+      mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.))))) %>% mutate(row_id = row_number())
+
+
+    fin_mat = R_ic_id %>% filter(id%in%uni_id) %>% distinct(id, .keep_all = T)
 
     return(fin_mat$row_id)
   }
