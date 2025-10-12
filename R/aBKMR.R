@@ -144,27 +144,30 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = FALSE){
   Rdf <- as.data.frame(R)
 
 
-  first_idx <- which(!duplicated(do.call(paste, c(Rdf, sep = "\r"))))
+  key <- do.call(paste, c(Rdf, sep = "\r"))
+  rep_idx <- match(key, unique(key))
 
+  first_row_by_class <- as.integer(tapply(seq_len(nrow(Rdf)), rep_idx, function(ix) ix[1]))
 
-  rep_idx <- match(do.call(paste, c(Rdf, sep = "\r")),
-                   do.call(paste, c(Rdf[first_idx, , drop=FALSE], sep = "\r")))
+  count_by_class <- as.integer(tabulate(rep_idx, nbins = length(first_row_by_class)))
 
+  if (!w){
 
-  if (!w) {
+    if (nd > length(first_row_by_class)) stop("nd exceeds number of unique rows")
+    id_ini_0based <- sample(first_row_by_class, nd, replace = FALSE) - 1L
 
-    id_ini_0based <- sample(first_idx, nd) - 1L
+    id_ini_0based <- pmin(pmax(id_ini_0based, 0L), nrow(Rdf)-1L)
     return(py$sam_py(R, nd, as.integer(id_ini_0based), num_nn,
-                     P=as.integer(P), Q=as.integer(Q), max_loop=as.integer(max_loop)))
+                     P = as.integer(P), Q = as.integer(Q), max_loop = as.integer(max_loop)))
   } else {
 
-    tab <- table(rep_idx)
-    uniq_pos <- as.integer(names(tab))
-    weights  <- as.numeric(tab) / sum(tab)
-    chosen_pos <- sample(uniq_pos, nd, replace = FALSE, prob = weights)
-    id_ini_0based <- first_idx[chosen_pos] - 1L
+    if (nd > length(first_row_by_class)) stop("nd exceeds number of unique rows")
+    prob <- count_by_class / sum(count_by_class)
+    id_ini_0based <- sample(first_row_by_class, nd, replace = FALSE, prob = prob) - 1L
+
+    id_ini_0based <- pmin(pmax(id_ini_0based, 0L), nrow(Rdf)-1L)
     return(py$sam_py_w(R, nd, as.integer(id_ini_0based), num_nn,
-                       P=as.integer(P), Q=as.integer(Q), max_loop=as.integer(max_loop)))
+                       P = as.integer(P), Q = as.integer(Q), max_loop = as.integer(max_loop)))
   }
 }
 
