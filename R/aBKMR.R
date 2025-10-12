@@ -142,7 +142,7 @@ sam_py_r = function(R, nd, num_nn, P = -20, Q = 20, max_loop = 20, w = F){
   num_nn = as.integer(num_nn)
 
   R_ic <- data.frame(R) %>%
-    mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.))))) %>% mutate(row_id = row_number())
+    mutate(id = match(do.call(paste, as.list(.)), unique(do.call(paste, as.list(.)))))
 
 
   R_uni = data.frame(R_ic) %>% group_by(across(everything())) %>%
